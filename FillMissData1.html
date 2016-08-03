@@ -127,10 +127,11 @@ $(document).ready(function () {
 <li><a href="#resources">Resources</a></li>
 <li><a href="#prerequisites">0. Prerequisites</a></li>
 <li><a href="#get-the-data-in">1. Get the data in</a><ul>
-<li><a href="#loading-a-csv-file-of-precipitation-station-records">Loading a CSV file of Precipitation Station Records</a></li>
+<li><a href="#loading-csv-files-of-precipitation-station-records-and-their-lon-lat-coordinates-nad-1983-ca-iii-fips---ft">Loading CSV files of Precipitation Station Records and their Lon, Lat Coordinates (NAD 1983 CA III FIPS - ft)</a></li>
 <li><a href="#specifying-the-start-and-end-date">Specifying the Start and End Date</a></li>
 <li><a href="#organizing-the-data-and-preparing-it-for-analysis">Organizing the Data and Preparing it for Analysis</a></li>
 <li><a href="#specifying-the-limits-of-attributes-used-in-the-data-filling-process">Specifying the Limits of Attributes Used in the Data-Filling Process</a></li>
+<li><a href="#finding-and-distances-between-stations">Finding and Distances Between Stations</a></li>
 </ul></li>
 </ul>
 </div>
@@ -156,19 +157,21 @@ $(document).ready(function () {
 </ul></li>
 </ul>
 <pre class="r"><code>setwd( tempdir() )  # set working directory to temporary directory 
+
 download.file(&quot;https://github.com/njdepsky/Climate-Data-Processing-for-WEAP-Applications/raw/master/rawdata/fillmissdata.zip&quot;, destfile = 'fillmissdata.zip')
-unzip( 'fillmissdata.zip' , exdir = '.')</code></pre>
+
+unzip( 'fillmissdata.zip' , exdir = getwd())</code></pre>
 </div>
 <div id="prerequisites" class="section level1">
 <h1>0. Prerequisites</h1>
-<p>Some date functions we will use come from the <code>zoo</code> package, so be sure to have it installed prior to attempting this exercise. You can download this package with…</p>
+<p>Some date functions we will use come from the <code>zoo</code> package, so be sure to have it installed prior to attempting this exercise. You can download this package with the following command.</p>
 <pre class="r"><code>install.packages('zoo', repos = &quot;http://cran.cnr.berkeley.edu/&quot;)</code></pre>
 <pre><code>## Installing package into 'C:/Users/Nick/Documents/R/win-library/3.3'
 ## (as 'lib' is unspecified)</code></pre>
 <pre><code>## package 'zoo' successfully unpacked and MD5 sums checked
 ## 
 ## The downloaded binary packages are in
-##  C:\Users\Nick\AppData\Local\Temp\RtmpiaOFGu\downloaded_packages</code></pre>
+##  C:\Users\Nick\AppData\Local\Temp\RtmpA3PZsw\downloaded_packages</code></pre>
 <pre class="r"><code>library(zoo)</code></pre>
 <pre><code>## Warning: package 'zoo' was built under R version 3.3.1</code></pre>
 <pre><code>## 
@@ -180,18 +183,226 @@ unzip( 'fillmissdata.zip' , exdir = '.')</code></pre>
 <div id="get-the-data-in" class="section level1">
 <h1>1. Get the data in</h1>
 <p>Now will import the downloaded precipitation time-series</p>
-<div id="loading-a-csv-file-of-precipitation-station-records" class="section level2">
-<h2>Loading a CSV file of Precipitation Station Records</h2>
-<pre class="r"><code>rain &lt;- read.csv('fillmissdata\\SCVWD_Daily_RainGage_ts.csv', check.names = F, stringsAsFactors = F)</code></pre>
+<div id="loading-csv-files-of-precipitation-station-records-and-their-lon-lat-coordinates-nad-1983-ca-iii-fips---ft" class="section level2">
+<h2>Loading CSV files of Precipitation Station Records and their Lon, Lat Coordinates (NAD 1983 CA III FIPS - ft)</h2>
+<pre class="r"><code>rain &lt;- read.csv('fillmissdata\\SCVWD_Daily_RainGage_ts.csv', check.names = F, stringsAsFactors = F)
+
+Coord &lt;- read.csv('fillmissdata\\Station_XY_ft.csv', check.names = F, stringsAsFactors = F)
+head(Coord)</code></pre>
+<pre><code>##     ID                     Sta EASTING83 NORTHING83 Elev ft
+## 1 6001           6001_Alamitos   6162720    1915368     195
+## 2 6002       6002_Alma College   6124377    1892005     960
+## 3 6003  6003_Almaden Reservoir   6170385    1883214     630
+## 4 6004  6004_Almaden Watershed   6169879    1882540     640
+## 5 6005 6005_Alviso_Leslie Salt   6132307    1978969      10
+## 6 6006         6006_Ben Lomond   6099522    1856701     335</code></pre>
 <p>that was easy!</p>
-<p>as a side note, the ‘check.names = F’ parameter in the ‘read.csv’ function preserves the column headers from the original record table</p>
+<p>Note the ‘check.names = F’ parameter in the ‘read.csv’ function preserves the column headers from the original record table.</p>
 </div>
 <div id="specifying-the-start-and-end-date" class="section level2">
 <h2>Specifying the Start and End Date</h2>
 <pre class="r"><code>StartDate &lt;- as.Date('1/1/1990', format = &quot;%m/%d/%Y&quot;) # user-defined start date for period during which missing data will be filled
+
 EndDate &lt;- as.Date('12/31/2010', format = &quot;%m/%d/%Y&quot;) # user-defined end date
 
-rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates</code></pre>
+rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates
+head(rain)</code></pre>
+<pre><code>##             Date 6001_Alamitos 6002_Alma College 6003_Almaden Reservoir
+## 29952 1990-01-01           0.3                NA                     NA
+## 29953 1990-01-02           0.0                NA                     NA
+## 29954 1990-01-03           0.0                NA                     NA
+## 29955 1990-01-04           0.0                NA                     NA
+## 29956 1990-01-05           0.0                NA                     NA
+## 29957 1990-01-06           0.0                NA                     NA
+##       6004_Almaden Watershed 6005_Alviso_Leslie Salt 6006_Ben Lomond
+## 29952                    0.4                      NA             0.0
+## 29953                    0.0                      NA             0.7
+## 29954                    0.0                      NA             0.0
+## 29955                    0.0                      NA             0.0
+## 29956                    0.0                      NA             0.0
+## 29957                    0.0                      NA             0.0
+##       6008_Biel Ranch 6009_Big Basin Way 6010_Black Road 6011_Black Road
+## 29952             0.5               0.35             0.6              NA
+## 29953             0.0               0.00             0.0              NA
+## 29954             0.0               0.00             0.0              NA
+## 29955             0.0               0.00             0.0              NA
+## 29956             0.0               0.00             0.0              NA
+## 29957             0.0               0.00             0.0              NA
+##       6012_Calero Reservoir 6013_Cambrian Park 6014_Campbell Water Company
+## 29952                    NA                 NA                          NA
+## 29953                    NA                 NA                          NA
+## 29954                    NA                 NA                          NA
+## 29955                    NA                 NA                          NA
+## 29956                    NA                 NA                          NA
+## 29957                    NA                 NA                          NA
+##       6015_Castro Valley 6016_Guadalupe Slough 6017_Coe Park
+## 29952                0.5                  0.36           0.7
+## 29953                0.0                  0.00           0.0
+## 29954                0.0                  0.00           0.0
+## 29955                0.0                  0.00           0.0
+## 29956                0.0                  0.00           0.0
+## 29957                0.0                  0.00           0.0
+##       6018_Coit Ranch 6020_Cox Avenue 6021_Coyote Reservoir
+## 29952             0.5            0.37                   0.5
+## 29953             0.0            0.00                   0.0
+## 29954             0.0            0.00                   0.0
+## 29955             0.0            0.00                   0.0
+## 29956             0.0            0.00                   0.0
+## 29957             0.0            0.00                   0.0
+##       6022_Cupertino Water Company 6023_Curtner Ranch 6024_Dahl Ranch
+## 29952                          0.0                0.5             0.6
+## 29953                          0.4                0.0             0.0
+## 29954                          0.0                0.0             0.0
+## 29955                          0.0                0.0             0.0
+## 29956                          0.0                0.0             0.1
+## 29957                          0.0                0.0             0.0
+##       6025_Evergreen_Kuhn 6026_Garrod Ranch 6027_Gerber Ranch 6028_Gilroy
+## 29952                  NA                NA              0.00          NA
+## 29953                  NA                NA              0.31          NA
+## 29954                  NA                NA              0.00          NA
+## 29955                  NA                NA              0.00          NA
+## 29956                  NA                NA              0.00          NA
+## 29957                  NA                NA              0.00          NA
+##       6029_Gilroy 8 NE USWB 6030_Gilroy 9 WNW Hasting
+## 29952                    NA                        NA
+## 29953                    NA                        NA
+## 29954                    NA                        NA
+## 29955                    NA                        NA
+## 29956                    NA                        NA
+## 29957                    NA                        NA
+##       6032_Guadalupe Reservoir 6034_Haskins Ranch 6035_Jackson Ranch
+## 29952                       NA               0.71                 NA
+## 29953                       NA               0.00                 NA
+## 29954                       NA               0.00                 NA
+## 29955                       NA               0.00                 NA
+## 29956                       NA               0.00                 NA
+## 29957                       NA               0.00                 NA
+##       6036_Johnson Ranch 6037_Laguna Seca 6038_Lake Elsman
+## 29952               0.31              0.2             0.46
+## 29953               0.00              0.0             0.00
+## 29954               0.00              0.0             0.00
+## 29955               0.00              0.0             0.00
+## 29956               0.00              0.0             0.00
+## 29957               0.00              0.0             0.00
+##       6039_Lake Kittridge 6041_Leroy Anderson Dam 6042_Lexington Reservoir
+## 29952                 0.4                     0.5                      0.3
+## 29953                 0.0                     0.0                      0.0
+## 29954                 0.0                     0.0                      0.0
+## 29955                 0.0                     0.0                      0.0
+## 29956                 0.0                     0.0                      0.0
+## 29957                 0.0                     0.0                      0.0
+##       6043_Los Altos Reilly 6044_Loma Prieta 6045_Los Altos No 2
+## 29952                  0.29              0.4                0.26
+## 29953                  0.09              0.0                0.07
+## 29954                  0.00              0.0                0.00
+## 29955                  0.00              0.0                0.00
+## 29956                  0.00              0.0                0.00
+## 29957                  0.00              0.0                0.00
+##       6046_Los Altos Cal Wtr Svc 6047_Los Altos Fire
+## 29952                         NA                   0
+## 29953                         NA                   0
+## 29954                         NA                   0
+## 29955                         NA                   0
+## 29956                         NA                   0
+## 29957                         NA                   0
+##       6048_Sunnyvale Hamilton WTP 6049_Los Gatos 2 6050_Los Gatos Francis
+## 29952                         0.4               NA                     NA
+## 29953                         0.0               NA                     NA
+## 29954                         0.0               NA                     NA
+## 29955                         0.0               NA                     NA
+## 29956                         0.0               NA                     NA
+## 29957                         0.0               NA                     NA
+##       6051_Los Gatos Reservoir 6053_Maryknoll 6054_Miguelito
+## 29952                     0.43              0           0.63
+## 29953                     0.00              0           0.00
+## 29954                     0.00              0           0.00
+## 29955                     0.00              0           0.00
+## 29956                     0.00              0           0.00
+## 29957                     0.00              0           0.00
+##       6055_Millberry 6056_Milpitas_Silva 6057_Evergreen_Mirassou
+## 29952             NA                 0.0                    0.54
+## 29953             NA                 0.5                    0.00
+## 29954             NA                 0.0                    0.00
+## 29955             NA                 0.0                    0.00
+## 29956             NA                 0.0                    0.00
+## 29957             NA                 0.0                    0.00
+##       6058_Montevina Reservoir 6059_Morgan Hill 2E 6060_Morgan Hill 6 WSW
+## 29952                     0.37                  NA                     NA
+## 29953                     0.00                  NA                     NA
+## 29954                     0.00                  NA                     NA
+## 29955                     0.00                  NA                     NA
+## 29956                     0.00                  NA                     NA
+## 29957                     0.00                  NA                     NA
+##       6061_Morgan Hill_Harkness 6067_Mt Hamilton 6069_Mt Umunhum
+## 29952                        NA              0.1             0.2
+## 29953                        NA              0.1             0.1
+## 29954                        NA              0.2             0.0
+## 29955                        NA              0.1             0.0
+## 29956                        NA              0.0             0.0
+## 29957                        NA              0.0             0.0
+##       6075_Peabody Ranch 6077_Valley Christian 6079_Rinconada WTP
+## 29952                0.6                   0.7                0.3
+## 29953                0.0                   0.1                0.0
+## 29954                0.0                   0.0                0.0
+## 29955                0.0                   0.0                0.0
+## 29956                0.0                   0.0                0.0
+## 29957                0.0                   0.0                0.0
+##       6086_6131_San Jose Composite 6094_Saratoga Gap Maintenance
+## 29952                         0.41                            NA
+## 29953                         0.00                            NA
+## 29954                         0.00                            NA
+## 29955                         0.00                            NA
+## 29956                         0.00                            NA
+## 29957                         0.01                            NA
+##       6096_Searsville Lake 6097_Seven Mile Reservoir 6098_Shanti Ashrama
+## 29952                   NA                      0.35                 0.3
+## 29953                   NA                      0.00                 0.0
+## 29954                   NA                      0.00                 0.0
+## 29955                   NA                      0.00                 0.0
+## 29956                   NA                      0.00                 0.0
+## 29957                   NA                      0.00                 0.0
+##       6099_Penitencia WTP 6100_Stevens Creek Reservoir
+## 29952                 0.6                          0.4
+## 29953                 0.0                          0.0
+## 29954                 0.0                          0.0
+## 29955                 0.0                          0.0
+## 29956                 0.0                          0.0
+## 29957                 0.0                          0.0
+##       6101_Sunnyvale Sewage TP 6102_UTC 6104_Uvas Reservoir 6105_Uvas Park
+## 29952                       NA     0.51                 0.3           0.00
+## 29953                       NA     0.00                 0.0           0.62
+## 29954                       NA     0.00                 0.0           0.00
+## 29955                       NA     0.00                 0.0           0.00
+## 29956                       NA     0.00                 0.0           0.00
+## 29957                       NA     0.00                 0.0           0.00
+##       6108_West Yard 6121_Mountain View Corp Yard 6125_Vasona Pump Station
+## 29952            0.3                          0.4                      0.3
+## 29953            0.0                          0.0                      0.0
+## 29954            0.0                          0.0                      0.0
+## 29955            0.0                          0.0                      0.0
+## 29956            0.0                          0.0                      0.0
+## 29957            0.1                          0.0                      0.0
+##       6128_Calero Watershed 6129_Palo Alto Reclamation Plant
+## 29952                   0.3                              0.4
+## 29953                   0.0                              0.0
+## 29954                   0.0                              0.0
+## 29955                   0.0                              0.0
+## 29956                   0.0                              0.0
+## 29957                   0.0                              0.0
+##       6132_Evergreen 6135_Uvas Canyon County Park
+## 29952           0.47                           NA
+## 29953           0.00                           NA
+## 29954           0.00                           NA
+## 29955           0.00                           NA
+## 29956           0.00                           NA
+## 29957           0.00                           NA
+##       6138_Lexington Reservoir_Banjo Point 6141_Coyote Valley_Palm Ave
+## 29952                                   NA                          NA
+## 29953                                   NA                          NA
+## 29954                                   NA                          NA
+## 29955                                   NA                          NA
+## 29956                                   NA                          NA
+## 29957                                   NA                          NA</code></pre>
 <p>The above commands dictate the start and end dates for the period of analysis. This is something that the user needs to determine and input manually. This period will represent the time period over which missing values will be analyzed and replaced.</p>
 </div>
 <div id="organizing-the-data-and-preparing-it-for-analysis" class="section level2">
@@ -201,18 +412,321 @@ rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # fi
 rainmat &lt;- as.matrix(rain[,-1]) # converts records from data frame to matrix, excluding date values
 
 Rcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # creates blank matrix for plotting non-NAs in period of record plot, will consist of binary 1/0 values indicating present/missing data
+
 colnames(Rcd) &lt;- colnames(rainmat) # assigns the station names to the newly-created Rcd matrix
 
 NewRcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # blank matrix for plotting non-NAs in period of record plot with missing data newly filled
+
 colnames(NewRcd) &lt;- colnames(rainmat) # assigns the station names to the newly-created NewRcd matrix</code></pre>
 <p>If all of the objects created here don’t quite make sense yet, that’s OK, they will be put to use later.</p>
 </div>
 <div id="specifying-the-limits-of-attributes-used-in-the-data-filling-process" class="section level2">
 <h2>Specifying the Limits of Attributes Used in the Data-Filling Process</h2>
-<pre class="r"><code>OLlim &lt;- 5*365 # minimum length of overlap period (days) between stations to consider using them to fill one another's missing data
+<pre class="r"><code>Distlim &lt;- 10*5280 # maximum distance (ft) apart between stations to consider using them to complete one another's data
+
+OLlim &lt;- 5*365 # minimum length of overlap period (days) between stations to consider using them to fill one another's missing data
+
 CClim &lt;- 0.5 # minimum correlation coefficient (absolute value) between stations to consider using them to fill one another's missing data </code></pre>
 <p>The method we will apply to fill missing data is called the Correlation Coefficient Weighting Method, or CCW. This method consists of calculating the correlation coefficients between the records of every stations with one another (within the time-period specified above), and then using these weighted product of these coefficients and their respective recorded rainfall values in order to produce an estimate of the missing data value for a given station at a given time step.</p>
-<p>This process is much more easily understood in Teegavarapu &amp; Chandramouli’s 2005 paper ‘Improved weighting methods, deterministic and stochastic data-driven models for estimation of missing precipitation records’ in the Journal of Hydrology (see page 5 for an explanation of the CCW method).</p>
+<p>Therefore, you may want to limit which station data is used to fill a given stations data based on its distance, length of overlap of their historical records, and minimum Correlation Coefficient Values. These limits can be manually defined as shown above.</p>
+<p>NOTE: A detailed explanation of the CCW method can be found in Teegavarapu &amp; Chandramouli’s 2005 paper ‘Improved weighting methods, deterministic and stochastic data-driven models for estimation of missing precipitation records’ in the Journal of Hydrology (see page 5 for an explanation of the CCW method).</p>
+</div>
+<div id="finding-and-distances-between-stations" class="section level2">
+<h2>Finding and Distances Between Stations</h2>
+<pre class="r"><code>distmat &lt;- matrix(NA, numest, numest) # blank matrix to contain the distances between stations
+
+colnames(distmat) &lt;- colnames(rain)[-1] # assigns column names to station names
+
+rownames(distmat) &lt;- colnames(rain)[-1] # assigns row names to stations names
+
+for (i in 1:numest)
+{
+  for (j in 1:numest)
+  {
+    distmat[i,j] &lt;- sqrt((abs(Coord[j,4]) - abs(Coord[i,4]))^2 + (abs(Coord[j,4]) - abs(Coord[i,4]))^2) # distance formula calculating distance (in miles) between stations
+  }
+} 
+head(distmat)</code></pre>
+<pre><code>##                         6001_Alamitos 6002_Alma College
+## 6001_Alamitos                    0.00          33040.27
+## 6002_Alma College            33040.27              0.00
+## 6003_Almaden Reservoir       45472.62          12432.35
+## 6004_Almaden Watershed       46425.80          13385.53
+## 6005_Alviso_Leslie Salt      89945.40         122985.67
+## 6006_Ben Lomond              82968.23          49927.96
+##                         6003_Almaden Reservoir 6004_Almaden Watershed
+## 6001_Alamitos                       45472.6229             46425.8028
+## 6002_Alma College                   12432.3514             13385.5314
+## 6003_Almaden Reservoir                  0.0000               953.1799
+## 6004_Almaden Watershed                953.1799                 0.0000
+## 6005_Alviso_Leslie Salt            135418.0197            136371.1996
+## 6006_Ben Lomond                     37495.6099             36542.4299
+##                         6005_Alviso_Leslie Salt 6006_Ben Lomond
+## 6001_Alamitos                           89945.4        82968.23
+## 6002_Alma College                      122985.7        49927.96
+## 6003_Almaden Reservoir                 135418.0        37495.61
+## 6004_Almaden Watershed                 136371.2        36542.43
+## 6005_Alviso_Leslie Salt                     0.0       172913.63
+## 6006_Ben Lomond                        172913.6            0.00
+##                         6008_Biel Ranch 6009_Big Basin Way 6010_Black Road
+## 6001_Alamitos                 111505.08           3576.645        18532.45
+## 6002_Alma College             144545.35          36616.917        14507.82
+## 6003_Almaden Reservoir        156977.71          49049.268        26940.17
+## 6004_Almaden Watershed        157930.89          50002.448        27893.35
+## 6005_Alviso_Leslie Salt        21559.69          86368.752       108477.85
+## 6006_Ben Lomond               194473.32          86544.878        64435.78
+##                         6011_Black Road 6012_Calero Reservoir
+## 6001_Alamitos                  20072.44             35906.119
+## 6002_Alma College              12967.83              2865.847
+## 6003_Almaden Reservoir         25400.18              9566.504
+## 6004_Almaden Watershed         26353.36             10519.684
+## 6005_Alviso_Leslie Salt       110017.84            125851.515
+## 6006_Ben Lomond                62895.79             47062.114
+##                         6013_Cambrian Park 6014_Campbell Water Company
+## 6001_Alamitos                     4211.528                    21322.75
+## 6002_Alma College                37251.799                    54363.02
+## 6003_Almaden Reservoir           49684.151                    66795.37
+## 6004_Almaden Watershed           50637.331                    67748.55
+## 6005_Alviso_Leslie Salt          85733.869                    68622.65
+## 6006_Ben Lomond                  87179.761                   104290.98
+##                         6015_Castro Valley 6016_Guadalupe Slough
+## 6001_Alamitos                    150083.41             107207.29
+## 6002_Alma College                117043.14             140247.56
+## 6003_Almaden Reservoir           104610.79             152679.91
+## 6004_Almaden Watershed           103657.61             153633.09
+## 6005_Alviso_Leslie Salt          240028.81              17261.89
+## 6006_Ben Lomond                   67115.18             190175.52
+##                         6017_Coe Park 6018_Coit Ranch 6020_Cox Avenue
+## 6001_Alamitos             32954.00443       51968.219        18967.43
+## 6002_Alma College            86.26703       18927.947        52007.70
+## 6003_Almaden Reservoir    12518.61845        6495.596        64440.06
+## 6004_Almaden Watershed    13471.79840        5542.416        65393.24
+## 6005_Alviso_Leslie Salt  122899.40121      141913.616        70977.96
+## 6006_Ben Lomond           50014.22832       31000.014       101935.67
+##                         6021_Coyote Reservoir 6022_Cupertino Water Company
+## 6001_Alamitos                        69650.02                     40104.32
+## 6002_Alma College                    36609.75                     73144.60
+## 6003_Almaden Reservoir               24177.40                     85576.95
+## 6004_Almaden Watershed               23224.22                     86530.13
+## 6005_Alviso_Leslie Salt             159595.41                     49841.07
+## 6006_Ben Lomond                      13318.21                    123072.56
+##                         6023_Curtner Ranch 6024_Dahl Ranch
+## 6001_Alamitos                    113320.93        50426.61
+## 6002_Alma College                146361.20        83466.88
+## 6003_Almaden Reservoir           158793.56        95899.24
+## 6004_Almaden Watershed           159746.74        96852.42
+## 6005_Alviso_Leslie Salt           23375.54        39518.78
+## 6006_Ben Lomond                  196289.17       133394.85
+##                         6025_Evergreen_Kuhn 6026_Garrod Ranch
+## 6001_Alamitos                      28873.08          16074.40
+## 6002_Alma College                  61913.35          49114.68
+## 6003_Almaden Reservoir             74345.70          61547.03
+## 6004_Almaden Watershed             75298.88          62500.21
+## 6005_Alviso_Leslie Salt            61072.32          73870.99
+## 6006_Ben Lomond                   111841.31          99042.64
+##                         6027_Gerber Ranch 6028_Gilroy
+## 6001_Alamitos                    59535.89   128883.25
+## 6002_Alma College                92576.16    95842.98
+## 6003_Almaden Reservoir          105008.51    83410.63
+## 6004_Almaden Watershed          105961.69    82457.45
+## 6005_Alviso_Leslie Salt          30409.51   218828.65
+## 6006_Ben Lomond                 142504.12    45915.02
+##                         6029_Gilroy 8 NE USWB 6030_Gilroy 9 WNW Hasting
+## 6001_Alamitos                       112528.39                 101199.64
+## 6002_Alma College                    79488.12                  68159.37
+## 6003_Almaden Reservoir               67055.77                  55727.01
+## 6004_Almaden Watershed               66102.59                  54773.83
+## 6005_Alviso_Leslie Salt             202473.79                 191145.03
+## 6006_Ben Lomond                      29560.16                  18231.40
+##                         6032_Guadalupe Reservoir 6034_Haskins Ranch
+## 6001_Alamitos                          23953.949           75886.02
+## 6002_Alma College                       9086.322          108926.29
+## 6003_Almaden Reservoir                 21518.674          121358.64
+## 6004_Almaden Watershed                 22471.854          122311.82
+## 6005_Alviso_Leslie Salt               113899.346           14059.38
+## 6006_Ben Lomond                        59014.283          158854.25
+##                         6035_Jackson Ranch 6036_Johnson Ranch
+## 6001_Alamitos                   46077.4679           13094.20
+## 6002_Alma College               13037.1964           19946.07
+## 6003_Almaden Reservoir            604.8450           32378.42
+## 6004_Almaden Watershed            348.3349           33331.60
+## 6005_Alviso_Leslie Salt        136022.8647          103039.60
+## 6006_Ben Lomond                 36890.7649           69874.03
+##                         6037_Laguna Seca 6038_Lake Elsman
+## 6001_Alamitos                  24761.465         60018.19
+## 6002_Alma College               8278.806         26977.92
+## 6003_Almaden Reservoir         20711.158         14545.57
+## 6004_Almaden Watershed         21664.338         13592.39
+## 6005_Alviso_Leslie Salt       114706.862        149963.59
+## 6006_Ben Lomond                58206.767         22950.04
+##                         6039_Lake Kittridge 6041_Leroy Anderson Dam
+## 6001_Alamitos                     28759.758               43840.620
+## 6002_Alma College                  4280.513               10800.349
+## 6003_Almaden Reservoir            16712.865                1632.002
+## 6004_Almaden Watershed            17666.045                2585.182
+## 6005_Alviso_Leslie Salt          118705.155              133786.017
+## 6006_Ben Lomond                   54208.475               39127.612
+##                         6042_Lexington Reservoir 6043_Los Altos Reilly
+## 6001_Alamitos                          31814.148              66226.84
+## 6002_Alma College                       1226.123              99267.11
+## 6003_Almaden Reservoir                 13658.475             111699.47
+## 6004_Almaden Watershed                 14611.655             112652.65
+## 6005_Alviso_Leslie Salt               121759.545              23718.55
+## 6006_Ben Lomond                        51154.084             149195.08
+##                         6044_Loma Prieta 6045_Los Altos No 2
+## 6001_Alamitos                   70296.31            67378.76
+## 6002_Alma College               37256.04           100419.03
+## 6003_Almaden Reservoir          24823.69           112851.39
+## 6004_Almaden Watershed          23870.51           113804.57
+## 6005_Alviso_Leslie Salt        160241.71            22566.63
+## 6006_Ben Lomond                 12671.92           150347.00
+##                         6046_Los Altos Cal Wtr Svc 6047_Los Altos Fire
+## 6001_Alamitos                             56064.22            72413.56
+## 6002_Alma College                         89104.49           105453.83
+## 6003_Almaden Reservoir                   101536.84           117886.18
+## 6004_Almaden Watershed                   102490.02           118839.36
+## 6005_Alviso_Leslie Salt                   33881.18            17531.84
+## 6006_Ben Lomond                          139032.45           155381.79
+##                         6048_Sunnyvale Hamilton WTP 6049_Los Gatos 2
+## 6001_Alamitos                              56912.20         9248.405
+## 6002_Alma College                          89952.47        23791.866
+## 6003_Almaden Reservoir                    102384.82        36224.218
+## 6004_Almaden Watershed                    103338.00        37177.398
+## 6005_Alviso_Leslie Salt                    33033.20        99193.802
+## 6006_Ben Lomond                           139880.43        73719.828
+##                         6050_Los Gatos Francis 6051_Los Gatos Reservoir
+## 6001_Alamitos                         4515.584                 14072.99
+## 6002_Alma College                    28524.688                 18967.28
+## 6003_Almaden Reservoir               40957.039                 31399.63
+## 6004_Almaden Watershed               41910.219                 32352.81
+## 6005_Alviso_Leslie Salt              94460.981                104018.39
+## 6006_Ben Lomond                      78452.649                 68895.24
+##                         6053_Maryknoll 6054_Miguelito 6055_Millberry
+## 6001_Alamitos                 45085.13       71250.91       66611.35
+## 6002_Alma College             78125.40      104291.18       33571.08
+## 6003_Almaden Reservoir        90557.75      116723.53       21138.73
+## 6004_Almaden Watershed        91510.93      117676.71       20185.55
+## 6005_Alviso_Leslie Salt       44860.27       18694.49      156556.75
+## 6006_Ben Lomond              128053.36      154219.14       16356.88
+##                         6056_Milpitas_Silva 6057_Evergreen_Mirassou
+## 6001_Alamitos                      96896.26                34813.45
+## 6002_Alma College                 129936.53                67853.73
+## 6003_Almaden Reservoir            142368.88                80286.08
+## 6004_Almaden Watershed            143322.06                81239.26
+## 6005_Alviso_Leslie Salt             6950.86                55131.94
+## 6006_Ben Lomond                   179864.49               117781.69
+##                         6058_Montevina Reservoir 6059_Morgan Hill 2E
+## 6001_Alamitos                          23739.922            59992.86
+## 6002_Alma College                       9300.349            26952.59
+## 6003_Almaden Reservoir                 21732.701            14520.24
+## 6004_Almaden Watershed                 22685.881            13567.06
+## 6005_Alviso_Leslie Salt               113685.319           149938.26
+## 6006_Ben Lomond                        59228.311            22975.37
+##                         6060_Morgan Hill 6 WSW 6061_Morgan Hill_Harkness
+## 6001_Alamitos                         76458.11                 78742.039
+## 6002_Alma College                     43417.84                 45701.768
+## 6003_Almaden Reservoir                30985.49                 33269.416
+## 6004_Almaden Watershed                30032.31                 32316.237
+## 6005_Alviso_Leslie Salt              166403.51                168687.436
+## 6006_Ben Lomond                        6510.12                  4226.193
+##                         6067_Mt Hamilton 6069_Mt Umunhum
+## 6001_Alamitos                   50961.19      45524.9488
+## 6002_Alma College               84001.46      12484.6773
+## 6003_Almaden Reservoir          96433.81         52.3259
+## 6004_Almaden Watershed          97386.99        900.8540
+## 6005_Alviso_Leslie Salt         38984.21     135470.3456
+## 6006_Ben Lomond                133929.42      37443.2840
+##                         6075_Peabody Ranch 6077_Valley Christian
+## 6001_Alamitos                    105651.65              2644.579
+## 6002_Alma College                 72611.38             30395.692
+## 6003_Almaden Reservoir            60179.03             42828.044
+## 6004_Almaden Watershed            59225.85             43781.223
+## 6005_Alviso_Leslie Salt          195597.05             92589.976
+## 6006_Ben Lomond                   22683.42             80323.653
+##                         6079_Rinconada WTP 6086_6131_San Jose Composite
+## 6001_Alamitos                     4896.149                     48857.08
+## 6002_Alma College                37936.420                     81897.35
+## 6003_Almaden Reservoir           50368.772                     94329.70
+## 6004_Almaden Watershed           51321.952                     95282.88
+## 6005_Alviso_Leslie Salt          85049.248                     41088.32
+## 6006_Ben Lomond                  87864.382                    131825.31
+##                         6094_Saratoga Gap Maintenance 6096_Searsville Lake
+## 6001_Alamitos                                7243.602            82981.809
+## 6002_Alma College                           40283.873           116022.081
+## 6003_Almaden Reservoir                      52716.225           128454.432
+## 6004_Almaden Watershed                      53669.405           129407.612
+## 6005_Alviso_Leslie Salt                     82701.795             6963.588
+## 6006_Ben Lomond                             90211.835           165950.042
+##                         6097_Seven Mile Reservoir 6098_Shanti Ashrama
+## 6001_Alamitos                            823.0723            29551.41
+## 6002_Alma College                      33863.3438            62591.68
+## 6003_Almaden Reservoir                 46295.6952            75024.03
+## 6004_Almaden Watershed                 47248.8751            75977.21
+## 6005_Alviso_Leslie Salt                89122.3245            60393.99
+## 6006_Ben Lomond                        83791.3050           112519.64
+##                         6099_Penitencia WTP 6100_Stevens Creek Reservoir
+## 6001_Alamitos                      77582.34                     22153.66
+## 6002_Alma College                 110622.61                     55193.93
+## 6003_Almaden Reservoir            123054.96                     67626.28
+## 6004_Almaden Watershed            124008.14                     68579.46
+## 6005_Alviso_Leslie Salt            12363.05                     67791.74
+## 6006_Ben Lomond                   160550.57                    105121.89
+##                         6101_Sunnyvale Sewage TP  6102_UTC
+## 6001_Alamitos                         89328.8704  7870.212
+## 6002_Alma College                    122369.1418 25170.060
+## 6003_Almaden Reservoir               134801.4933 37602.411
+## 6004_Almaden Watershed               135754.6732 38555.591
+## 6005_Alviso_Leslie Salt                 616.5264 97815.608
+## 6006_Ben Lomond                      172297.1031 75098.021
+##                         6104_Uvas Reservoir 6105_Uvas Park 6108_West Yard
+## 6001_Alamitos                      94530.28       69042.12       32244.07
+## 6002_Alma College                  61490.01       36001.85       65284.34
+## 6003_Almaden Reservoir             49057.65       23569.50       77716.69
+## 6004_Almaden Watershed             48104.47       22616.32       78669.87
+## 6005_Alviso_Leslie Salt           184475.67      158987.52       57701.33
+## 6006_Ben Lomond                    11562.04       13926.11      115212.30
+##                         6121_Mountain View Corp Yard
+## 6001_Alamitos                               76978.47
+## 6002_Alma College                          110018.74
+## 6003_Almaden Reservoir                     122451.10
+## 6004_Almaden Watershed                     123404.28
+## 6005_Alviso_Leslie Salt                     12966.92
+## 6006_Ben Lomond                            159946.71
+##                         6125_Vasona Pump Station 6128_Calero Watershed
+## 6001_Alamitos                           6511.039             40507.319
+## 6002_Alma College                      39551.311              7467.048
+## 6003_Almaden Reservoir                 51983.662              4965.304
+## 6004_Almaden Watershed                 52936.842              5918.484
+## 6005_Alviso_Leslie Salt                83434.358            130452.716
+## 6006_Ben Lomond                        89479.272             42460.914
+##                         6129_Palo Alto Reclamation Plant 6132_Evergreen
+## 6001_Alamitos                                  108825.15       25899.91
+## 6002_Alma College                              141865.42       58940.18
+## 6003_Almaden Reservoir                         154297.77       71372.53
+## 6004_Almaden Watershed                         155250.95       72325.71
+## 6005_Alviso_Leslie Salt                         18879.75       64045.49
+## 6006_Ben Lomond                                191793.38      108868.14
+##                         6135_Uvas Canyon County Park
+## 6001_Alamitos                               84063.68
+## 6002_Alma College                           51023.41
+## 6003_Almaden Reservoir                      38591.06
+## 6004_Almaden Watershed                      37637.88
+## 6005_Alviso_Leslie Salt                    174009.08
+## 6006_Ben Lomond                              1095.45
+##                         6138_Lexington Reservoir_Banjo Point
+## 6001_Alamitos                                      25603.714
+## 6002_Alma College                                   7436.557
+## 6003_Almaden Reservoir                             19868.909
+## 6004_Almaden Watershed                             20822.089
+## 6005_Alviso_Leslie Salt                           115549.111
+## 6006_Ben Lomond                                    57364.518
+##                         6141_Coyote Valley_Palm Ave
+## 6001_Alamitos                                    NA
+## 6002_Alma College                                NA
+## 6003_Almaden Reservoir                           NA
+## 6004_Almaden Watershed                           NA
+## 6005_Alviso_Leslie Salt                          NA
+## 6006_Ben Lomond                                  NA</code></pre>
 </div>
 </div>
 
