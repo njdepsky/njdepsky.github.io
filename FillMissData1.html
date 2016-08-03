@@ -127,11 +127,16 @@ $(document).ready(function () {
 <li><a href="#resources">Resources</a></li>
 <li><a href="#prerequisites">0. Prerequisites</a></li>
 <li><a href="#get-the-data-in">1. Get the data in</a><ul>
-<li><a href="#loading-csv-files-of-precipitation-station-records-and-their-lon-lat-coordinates-nad-1983-ca-iii-fips---ft">Loading CSV files of Precipitation Station Records and their Lon, Lat Coordinates (NAD 1983 CA III FIPS - ft)</a></li>
-<li><a href="#specifying-the-start-and-end-date">Specifying the Start and End Date</a></li>
+<li><a href="#loading-csv-file-of-the-lon-lat-coordinates-of-the-rainfall-stations-nad-1983-ca-iii-fips---ft">Loading CSV file of the Lon, Lat Coordinates of the rainfall stations (NAD 1983 CA III FIPS - ft)</a></li>
+<li><a href="#importing-the-rainfall-records-and-specifying-the-start-and-end-date-for-the-analysis">Importing the rainfall records, and specifying the Start and End Date for the Analysis</a></li>
 <li><a href="#organizing-the-data-and-preparing-it-for-analysis">Organizing the Data and Preparing it for Analysis</a></li>
 <li><a href="#specifying-the-limits-of-attributes-used-in-the-data-filling-process">Specifying the Limits of Attributes Used in the Data-Filling Process</a></li>
-<li><a href="#finding-and-distances-between-stations">Finding and Distances Between Stations</a></li>
+<li><a href="#finding-distances-between-stations">Finding Distances between Stations</a></li>
+<li><a href="#finding-length-of-overlap-of-data-non-missing-values-between-stations">Finding Length of Overlap of Data (non-missing values) between Stations</a></li>
+<li><a href="#calculating-correlation-coefficients-between-stations">Calculating Correlation Coefficients between Stations</a></li>
+<li><a href="#filtering-cc-values-based-upon-the-thresholds-defined-for-acceptable-levels-of-overlap-distance-and-cc-values-themselves-between-stations">Filtering CC Values Based Upon the Thresholds Defined for Acceptable Levels of Overlap, Distance, and CC Values themselves Between Stations</a></li>
+<li><a href="#filling-missing-data-using-the-ccw-method">Filling Missing Data Using the CCW Method</a></li>
+<li><a href="#plotting-period-of-record-graph">Plotting Period of Record Graph</a></li>
 </ul></li>
 </ul>
 </div>
@@ -156,7 +161,7 @@ $(document).ready(function () {
 <li><code>Station_XY_ft.csv</code>: csv of station Lon Lat Coordinates You can download/unzip the data by hand or run the following code to download and unzip the data to a temporary directory</li>
 </ul></li>
 </ul>
-<pre class="r"><code>setwd( tempdir() )  # set working directory to temporary directory 
+<pre class="r"><code>setwd(tempdir())  # set working directory to temporary directory 
 
 download.file(&quot;https://github.com/njdepsky/Climate-Data-Processing-for-WEAP-Applications/raw/master/rawdata/fillmissdata.zip&quot;, destfile = 'fillmissdata.zip')
 
@@ -171,7 +176,7 @@ unzip( 'fillmissdata.zip' , exdir = getwd())</code></pre>
 <pre><code>## package 'zoo' successfully unpacked and MD5 sums checked
 ## 
 ## The downloaded binary packages are in
-##  C:\Users\Nick\AppData\Local\Temp\RtmpA3PZsw\downloaded_packages</code></pre>
+##  C:\Users\Nick\AppData\Local\Temp\RtmpMXC9h7\downloaded_packages</code></pre>
 <pre class="r"><code>library(zoo)</code></pre>
 <pre><code>## Warning: package 'zoo' was built under R version 3.3.1</code></pre>
 <pre><code>## 
@@ -183,11 +188,9 @@ unzip( 'fillmissdata.zip' , exdir = getwd())</code></pre>
 <div id="get-the-data-in" class="section level1">
 <h1>1. Get the data in</h1>
 <p>Now will import the downloaded precipitation time-series</p>
-<div id="loading-csv-files-of-precipitation-station-records-and-their-lon-lat-coordinates-nad-1983-ca-iii-fips---ft" class="section level2">
-<h2>Loading CSV files of Precipitation Station Records and their Lon, Lat Coordinates (NAD 1983 CA III FIPS - ft)</h2>
-<pre class="r"><code>rain &lt;- read.csv('fillmissdata\\SCVWD_Daily_RainGage_ts.csv', check.names = F, stringsAsFactors = F)
-
-Coord &lt;- read.csv('fillmissdata\\Station_XY_ft.csv', check.names = F, stringsAsFactors = F)
+<div id="loading-csv-file-of-the-lon-lat-coordinates-of-the-rainfall-stations-nad-1983-ca-iii-fips---ft" class="section level2">
+<h2>Loading CSV file of the Lon, Lat Coordinates of the rainfall stations (NAD 1983 CA III FIPS - ft)</h2>
+<pre class="r"><code>Coord &lt;- read.csv('fillmissdata\\Station_XY_ft.csv', check.names = F, stringsAsFactors = F)
 head(Coord)</code></pre>
 <pre><code>##     ID                     Sta EASTING83 NORTHING83 Elev ft
 ## 1 6001           6001_Alamitos   6162720    1915368     195
@@ -199,534 +202,198 @@ head(Coord)</code></pre>
 <p>that was easy!</p>
 <p>Note the ‘check.names = F’ parameter in the ‘read.csv’ function preserves the column headers from the original record table.</p>
 </div>
-<div id="specifying-the-start-and-end-date" class="section level2">
-<h2>Specifying the Start and End Date</h2>
-<pre class="r"><code>StartDate &lt;- as.Date('1/1/1990', format = &quot;%m/%d/%Y&quot;) # user-defined start date for period during which missing data will be filled
+<div id="importing-the-rainfall-records-and-specifying-the-start-and-end-date-for-the-analysis" class="section level2">
+<h2>Importing the rainfall records, and specifying the Start and End Date for the Analysis</h2>
+<pre class="r"><code>rain &lt;- read.csv('fillmissdata\\SCVWD_Daily_RainGage_ts.csv', check.names = F, stringsAsFactors = F)
+rain$Date &lt;- as.Date(rain$Date) 
+
+StartDate &lt;- as.Date('1/1/1990', format = &quot;%m/%d/%Y&quot;) # user-defined start date for period during which missing data will be filled
 
 EndDate &lt;- as.Date('12/31/2010', format = &quot;%m/%d/%Y&quot;) # user-defined end date
 
-rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates
-head(rain)</code></pre>
-<pre><code>##             Date 6001_Alamitos 6002_Alma College 6003_Almaden Reservoir
-## 29952 1990-01-01           0.3                NA                     NA
-## 29953 1990-01-02           0.0                NA                     NA
-## 29954 1990-01-03           0.0                NA                     NA
-## 29955 1990-01-04           0.0                NA                     NA
-## 29956 1990-01-05           0.0                NA                     NA
-## 29957 1990-01-06           0.0                NA                     NA
-##       6004_Almaden Watershed 6005_Alviso_Leslie Salt 6006_Ben Lomond
-## 29952                    0.4                      NA             0.0
-## 29953                    0.0                      NA             0.7
-## 29954                    0.0                      NA             0.0
-## 29955                    0.0                      NA             0.0
-## 29956                    0.0                      NA             0.0
-## 29957                    0.0                      NA             0.0
-##       6008_Biel Ranch 6009_Big Basin Way 6010_Black Road 6011_Black Road
-## 29952             0.5               0.35             0.6              NA
-## 29953             0.0               0.00             0.0              NA
-## 29954             0.0               0.00             0.0              NA
-## 29955             0.0               0.00             0.0              NA
-## 29956             0.0               0.00             0.0              NA
-## 29957             0.0               0.00             0.0              NA
-##       6012_Calero Reservoir 6013_Cambrian Park 6014_Campbell Water Company
-## 29952                    NA                 NA                          NA
-## 29953                    NA                 NA                          NA
-## 29954                    NA                 NA                          NA
-## 29955                    NA                 NA                          NA
-## 29956                    NA                 NA                          NA
-## 29957                    NA                 NA                          NA
-##       6015_Castro Valley 6016_Guadalupe Slough 6017_Coe Park
-## 29952                0.5                  0.36           0.7
-## 29953                0.0                  0.00           0.0
-## 29954                0.0                  0.00           0.0
-## 29955                0.0                  0.00           0.0
-## 29956                0.0                  0.00           0.0
-## 29957                0.0                  0.00           0.0
-##       6018_Coit Ranch 6020_Cox Avenue 6021_Coyote Reservoir
-## 29952             0.5            0.37                   0.5
-## 29953             0.0            0.00                   0.0
-## 29954             0.0            0.00                   0.0
-## 29955             0.0            0.00                   0.0
-## 29956             0.0            0.00                   0.0
-## 29957             0.0            0.00                   0.0
-##       6022_Cupertino Water Company 6023_Curtner Ranch 6024_Dahl Ranch
-## 29952                          0.0                0.5             0.6
-## 29953                          0.4                0.0             0.0
-## 29954                          0.0                0.0             0.0
-## 29955                          0.0                0.0             0.0
-## 29956                          0.0                0.0             0.1
-## 29957                          0.0                0.0             0.0
-##       6025_Evergreen_Kuhn 6026_Garrod Ranch 6027_Gerber Ranch 6028_Gilroy
-## 29952                  NA                NA              0.00          NA
-## 29953                  NA                NA              0.31          NA
-## 29954                  NA                NA              0.00          NA
-## 29955                  NA                NA              0.00          NA
-## 29956                  NA                NA              0.00          NA
-## 29957                  NA                NA              0.00          NA
-##       6029_Gilroy 8 NE USWB 6030_Gilroy 9 WNW Hasting
-## 29952                    NA                        NA
-## 29953                    NA                        NA
-## 29954                    NA                        NA
-## 29955                    NA                        NA
-## 29956                    NA                        NA
-## 29957                    NA                        NA
-##       6032_Guadalupe Reservoir 6034_Haskins Ranch 6035_Jackson Ranch
-## 29952                       NA               0.71                 NA
-## 29953                       NA               0.00                 NA
-## 29954                       NA               0.00                 NA
-## 29955                       NA               0.00                 NA
-## 29956                       NA               0.00                 NA
-## 29957                       NA               0.00                 NA
-##       6036_Johnson Ranch 6037_Laguna Seca 6038_Lake Elsman
-## 29952               0.31              0.2             0.46
-## 29953               0.00              0.0             0.00
-## 29954               0.00              0.0             0.00
-## 29955               0.00              0.0             0.00
-## 29956               0.00              0.0             0.00
-## 29957               0.00              0.0             0.00
-##       6039_Lake Kittridge 6041_Leroy Anderson Dam 6042_Lexington Reservoir
-## 29952                 0.4                     0.5                      0.3
-## 29953                 0.0                     0.0                      0.0
-## 29954                 0.0                     0.0                      0.0
-## 29955                 0.0                     0.0                      0.0
-## 29956                 0.0                     0.0                      0.0
-## 29957                 0.0                     0.0                      0.0
-##       6043_Los Altos Reilly 6044_Loma Prieta 6045_Los Altos No 2
-## 29952                  0.29              0.4                0.26
-## 29953                  0.09              0.0                0.07
-## 29954                  0.00              0.0                0.00
-## 29955                  0.00              0.0                0.00
-## 29956                  0.00              0.0                0.00
-## 29957                  0.00              0.0                0.00
-##       6046_Los Altos Cal Wtr Svc 6047_Los Altos Fire
-## 29952                         NA                   0
-## 29953                         NA                   0
-## 29954                         NA                   0
-## 29955                         NA                   0
-## 29956                         NA                   0
-## 29957                         NA                   0
-##       6048_Sunnyvale Hamilton WTP 6049_Los Gatos 2 6050_Los Gatos Francis
-## 29952                         0.4               NA                     NA
-## 29953                         0.0               NA                     NA
-## 29954                         0.0               NA                     NA
-## 29955                         0.0               NA                     NA
-## 29956                         0.0               NA                     NA
-## 29957                         0.0               NA                     NA
-##       6051_Los Gatos Reservoir 6053_Maryknoll 6054_Miguelito
-## 29952                     0.43              0           0.63
-## 29953                     0.00              0           0.00
-## 29954                     0.00              0           0.00
-## 29955                     0.00              0           0.00
-## 29956                     0.00              0           0.00
-## 29957                     0.00              0           0.00
-##       6055_Millberry 6056_Milpitas_Silva 6057_Evergreen_Mirassou
-## 29952             NA                 0.0                    0.54
-## 29953             NA                 0.5                    0.00
-## 29954             NA                 0.0                    0.00
-## 29955             NA                 0.0                    0.00
-## 29956             NA                 0.0                    0.00
-## 29957             NA                 0.0                    0.00
-##       6058_Montevina Reservoir 6059_Morgan Hill 2E 6060_Morgan Hill 6 WSW
-## 29952                     0.37                  NA                     NA
-## 29953                     0.00                  NA                     NA
-## 29954                     0.00                  NA                     NA
-## 29955                     0.00                  NA                     NA
-## 29956                     0.00                  NA                     NA
-## 29957                     0.00                  NA                     NA
-##       6061_Morgan Hill_Harkness 6067_Mt Hamilton 6069_Mt Umunhum
-## 29952                        NA              0.1             0.2
-## 29953                        NA              0.1             0.1
-## 29954                        NA              0.2             0.0
-## 29955                        NA              0.1             0.0
-## 29956                        NA              0.0             0.0
-## 29957                        NA              0.0             0.0
-##       6075_Peabody Ranch 6077_Valley Christian 6079_Rinconada WTP
-## 29952                0.6                   0.7                0.3
-## 29953                0.0                   0.1                0.0
-## 29954                0.0                   0.0                0.0
-## 29955                0.0                   0.0                0.0
-## 29956                0.0                   0.0                0.0
-## 29957                0.0                   0.0                0.0
-##       6086_6131_San Jose Composite 6094_Saratoga Gap Maintenance
-## 29952                         0.41                            NA
-## 29953                         0.00                            NA
-## 29954                         0.00                            NA
-## 29955                         0.00                            NA
-## 29956                         0.00                            NA
-## 29957                         0.01                            NA
-##       6096_Searsville Lake 6097_Seven Mile Reservoir 6098_Shanti Ashrama
-## 29952                   NA                      0.35                 0.3
-## 29953                   NA                      0.00                 0.0
-## 29954                   NA                      0.00                 0.0
-## 29955                   NA                      0.00                 0.0
-## 29956                   NA                      0.00                 0.0
-## 29957                   NA                      0.00                 0.0
-##       6099_Penitencia WTP 6100_Stevens Creek Reservoir
-## 29952                 0.6                          0.4
-## 29953                 0.0                          0.0
-## 29954                 0.0                          0.0
-## 29955                 0.0                          0.0
-## 29956                 0.0                          0.0
-## 29957                 0.0                          0.0
-##       6101_Sunnyvale Sewage TP 6102_UTC 6104_Uvas Reservoir 6105_Uvas Park
-## 29952                       NA     0.51                 0.3           0.00
-## 29953                       NA     0.00                 0.0           0.62
-## 29954                       NA     0.00                 0.0           0.00
-## 29955                       NA     0.00                 0.0           0.00
-## 29956                       NA     0.00                 0.0           0.00
-## 29957                       NA     0.00                 0.0           0.00
-##       6108_West Yard 6121_Mountain View Corp Yard 6125_Vasona Pump Station
-## 29952            0.3                          0.4                      0.3
-## 29953            0.0                          0.0                      0.0
-## 29954            0.0                          0.0                      0.0
-## 29955            0.0                          0.0                      0.0
-## 29956            0.0                          0.0                      0.0
-## 29957            0.1                          0.0                      0.0
-##       6128_Calero Watershed 6129_Palo Alto Reclamation Plant
-## 29952                   0.3                              0.4
-## 29953                   0.0                              0.0
-## 29954                   0.0                              0.0
-## 29955                   0.0                              0.0
-## 29956                   0.0                              0.0
-## 29957                   0.0                              0.0
-##       6132_Evergreen 6135_Uvas Canyon County Park
-## 29952           0.47                           NA
-## 29953           0.00                           NA
-## 29954           0.00                           NA
-## 29955           0.00                           NA
-## 29956           0.00                           NA
-## 29957           0.00                           NA
-##       6138_Lexington Reservoir_Banjo Point 6141_Coyote Valley_Palm Ave
-## 29952                                   NA                          NA
-## 29953                                   NA                          NA
-## 29954                                   NA                          NA
-## 29955                                   NA                          NA
-## 29956                                   NA                          NA
-## 29957                                   NA                          NA</code></pre>
-<p>The above commands dictate the start and end dates for the period of analysis. This is something that the user needs to determine and input manually. This period will represent the time period over which missing values will be analyzed and replaced.</p>
+rainfilt &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates
+
+rainfilt &lt;- rainfilt[,which(colSums(!is.na(rainfilt)) &gt; 0)] # removes station columns that have no data for the specified time-period
+rainfilt[2492:2495,1:5] </code></pre>
+<pre><code>##             Date 6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 32443 1996-10-27          0.00                   0.00              NA            0.00
+## 32444 1996-10-28          0.00                   0.00              NA            0.00
+## 32445 1996-10-29          0.63                   1.34              NA            2.01
+## 32446 1996-10-30          0.31                   0.15              NA            0.31</code></pre>
+<p>The above commands load the raw historical rainfall records for each stations and dictate the start and end dates for the period of analysis. These dates are something that the user needs to determine and input manually. This period will represent the time period over which missing values in the original records will be analyzed and replaced.</p>
+<p>Displayed above are a few days of the historical rainfall records for 4 stations within the time-period specified, and where 1 of the 4 stations is missing data.</p>
 </div>
 <div id="organizing-the-data-and-preparing-it-for-analysis" class="section level2">
 <h2>Organizing the Data and Preparing it for Analysis</h2>
-<pre class="r"><code>numest &lt;- length(rain) - 1 # calculates number of rainfall stations in the imported record table
+<pre class="r"><code>numest &lt;- length(rainfilt) - 1 # calculates number of rainfall stations in the imported record table
 
-rainmat &lt;- as.matrix(rain[,-1]) # converts records from data frame to matrix, excluding date values
+rainmat &lt;- as.matrix(rainfilt[,-1]) # converts records from data frame to matrix, excluding date values
 
-Rcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # creates blank matrix for plotting non-NAs in period of record plot, will consist of binary 1/0 values indicating present/missing data
+Rcd &lt;- matrix(NA, nrow = length(rainfilt$Date), ncol = numest) # creates blank matrix for plotting non-NAs in period of record plot, will consist of binary 1/0 values indicating present/missing data
 
 colnames(Rcd) &lt;- colnames(rainmat) # assigns the station names to the newly-created Rcd matrix
 
-NewRcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # blank matrix for plotting non-NAs in period of record plot with missing data newly filled
+RcdFill &lt;- matrix(NA, nrow = length(rainfilt$Date), ncol = numest) # blank matrix for plotting non-NAs in period of record plot with missing data newly filled
 
-colnames(NewRcd) &lt;- colnames(rainmat) # assigns the station names to the newly-created NewRcd matrix</code></pre>
+colnames(RcdFill) &lt;- colnames(rainmat) # assigns the station names to the newly-created NewRcd matrix</code></pre>
 <p>If all of the objects created here don’t quite make sense yet, that’s OK, they will be put to use later.</p>
 </div>
 <div id="specifying-the-limits-of-attributes-used-in-the-data-filling-process" class="section level2">
 <h2>Specifying the Limits of Attributes Used in the Data-Filling Process</h2>
-<pre class="r"><code>Distlim &lt;- 10*5280 # maximum distance (ft) apart between stations to consider using them to complete one another's data
+<pre class="r"><code>Distlim &lt;- 8*5280 # maximum distance (ft) apart between stations to consider using them to complete one another's data (currently set equal to 8 miles)
 
-OLlim &lt;- 5*365 # minimum length of overlap period (days) between stations to consider using them to fill one another's missing data
+OLlim &lt;- 5*365 # minimum length of overlap period (days) between stations to consider using them to fill one another's missing data (currently set equal to 5 years)
 
 CClim &lt;- 0.5 # minimum correlation coefficient (absolute value) between stations to consider using them to fill one another's missing data </code></pre>
 <p>The method we will apply to fill missing data is called the Correlation Coefficient Weighting Method, or CCW. This method consists of calculating the correlation coefficients between the records of every stations with one another (within the time-period specified above), and then using these weighted product of these coefficients and their respective recorded rainfall values in order to produce an estimate of the missing data value for a given station at a given time step.</p>
 <p>Therefore, you may want to limit which station data is used to fill a given stations data based on its distance, length of overlap of their historical records, and minimum Correlation Coefficient Values. These limits can be manually defined as shown above.</p>
 <p>NOTE: A detailed explanation of the CCW method can be found in Teegavarapu &amp; Chandramouli’s 2005 paper ‘Improved weighting methods, deterministic and stochastic data-driven models for estimation of missing precipitation records’ in the Journal of Hydrology (see page 5 for an explanation of the CCW method).</p>
 </div>
-<div id="finding-and-distances-between-stations" class="section level2">
-<h2>Finding and Distances Between Stations</h2>
+<div id="finding-distances-between-stations" class="section level2">
+<h2>Finding Distances between Stations</h2>
 <pre class="r"><code>distmat &lt;- matrix(NA, numest, numest) # blank matrix to contain the distances between stations
 
-colnames(distmat) &lt;- colnames(rain)[-1] # assigns column names to station names
-
-rownames(distmat) &lt;- colnames(rain)[-1] # assigns row names to stations names
+colnames(distmat) &lt;- colnames(rainfilt)[-1] # assigns column names to station names
+rownames(distmat) &lt;- colnames(rainfilt)[-1] # assigns row names to stations names
 
 for (i in 1:numest)
 {
   for (j in 1:numest)
   {
-    distmat[i,j] &lt;- sqrt((abs(Coord[j,4]) - abs(Coord[i,4]))^2 + (abs(Coord[j,4]) - abs(Coord[i,4]))^2) # distance formula calculating distance (in miles) between stations
+    distmat[i,j] &lt;- sqrt((abs(Coord[j,4]) - abs(Coord[i,4]))^2 + (abs(Coord[j,4]) - abs(Coord[i,4]))^2) # distance formula calculating distance (ft) between stations
   }
 } 
-head(distmat)</code></pre>
-<pre><code>##                         6001_Alamitos 6002_Alma College
-## 6001_Alamitos                    0.00          33040.27
-## 6002_Alma College            33040.27              0.00
-## 6003_Almaden Reservoir       45472.62          12432.35
-## 6004_Almaden Watershed       46425.80          13385.53
-## 6005_Alviso_Leslie Salt      89945.40         122985.67
-## 6006_Ben Lomond              82968.23          49927.96
-##                         6003_Almaden Reservoir 6004_Almaden Watershed
-## 6001_Alamitos                       45472.6229             46425.8028
-## 6002_Alma College                   12432.3514             13385.5314
-## 6003_Almaden Reservoir                  0.0000               953.1799
-## 6004_Almaden Watershed                953.1799                 0.0000
-## 6005_Alviso_Leslie Salt            135418.0197            136371.1996
-## 6006_Ben Lomond                     37495.6099             36542.4299
-##                         6005_Alviso_Leslie Salt 6006_Ben Lomond
-## 6001_Alamitos                           89945.4        82968.23
-## 6002_Alma College                      122985.7        49927.96
-## 6003_Almaden Reservoir                 135418.0        37495.61
-## 6004_Almaden Watershed                 136371.2        36542.43
-## 6005_Alviso_Leslie Salt                     0.0       172913.63
-## 6006_Ben Lomond                        172913.6            0.00
-##                         6008_Biel Ranch 6009_Big Basin Way 6010_Black Road
-## 6001_Alamitos                 111505.08           3576.645        18532.45
-## 6002_Alma College             144545.35          36616.917        14507.82
-## 6003_Almaden Reservoir        156977.71          49049.268        26940.17
-## 6004_Almaden Watershed        157930.89          50002.448        27893.35
-## 6005_Alviso_Leslie Salt        21559.69          86368.752       108477.85
-## 6006_Ben Lomond               194473.32          86544.878        64435.78
-##                         6011_Black Road 6012_Calero Reservoir
-## 6001_Alamitos                  20072.44             35906.119
-## 6002_Alma College              12967.83              2865.847
-## 6003_Almaden Reservoir         25400.18              9566.504
-## 6004_Almaden Watershed         26353.36             10519.684
-## 6005_Alviso_Leslie Salt       110017.84            125851.515
-## 6006_Ben Lomond                62895.79             47062.114
-##                         6013_Cambrian Park 6014_Campbell Water Company
-## 6001_Alamitos                     4211.528                    21322.75
-## 6002_Alma College                37251.799                    54363.02
-## 6003_Almaden Reservoir           49684.151                    66795.37
-## 6004_Almaden Watershed           50637.331                    67748.55
-## 6005_Alviso_Leslie Salt          85733.869                    68622.65
-## 6006_Ben Lomond                  87179.761                   104290.98
-##                         6015_Castro Valley 6016_Guadalupe Slough
-## 6001_Alamitos                    150083.41             107207.29
-## 6002_Alma College                117043.14             140247.56
-## 6003_Almaden Reservoir           104610.79             152679.91
-## 6004_Almaden Watershed           103657.61             153633.09
-## 6005_Alviso_Leslie Salt          240028.81              17261.89
-## 6006_Ben Lomond                   67115.18             190175.52
-##                         6017_Coe Park 6018_Coit Ranch 6020_Cox Avenue
-## 6001_Alamitos             32954.00443       51968.219        18967.43
-## 6002_Alma College            86.26703       18927.947        52007.70
-## 6003_Almaden Reservoir    12518.61845        6495.596        64440.06
-## 6004_Almaden Watershed    13471.79840        5542.416        65393.24
-## 6005_Alviso_Leslie Salt  122899.40121      141913.616        70977.96
-## 6006_Ben Lomond           50014.22832       31000.014       101935.67
-##                         6021_Coyote Reservoir 6022_Cupertino Water Company
-## 6001_Alamitos                        69650.02                     40104.32
-## 6002_Alma College                    36609.75                     73144.60
-## 6003_Almaden Reservoir               24177.40                     85576.95
-## 6004_Almaden Watershed               23224.22                     86530.13
-## 6005_Alviso_Leslie Salt             159595.41                     49841.07
-## 6006_Ben Lomond                      13318.21                    123072.56
-##                         6023_Curtner Ranch 6024_Dahl Ranch
-## 6001_Alamitos                    113320.93        50426.61
-## 6002_Alma College                146361.20        83466.88
-## 6003_Almaden Reservoir           158793.56        95899.24
-## 6004_Almaden Watershed           159746.74        96852.42
-## 6005_Alviso_Leslie Salt           23375.54        39518.78
-## 6006_Ben Lomond                  196289.17       133394.85
-##                         6025_Evergreen_Kuhn 6026_Garrod Ranch
-## 6001_Alamitos                      28873.08          16074.40
-## 6002_Alma College                  61913.35          49114.68
-## 6003_Almaden Reservoir             74345.70          61547.03
-## 6004_Almaden Watershed             75298.88          62500.21
-## 6005_Alviso_Leslie Salt            61072.32          73870.99
-## 6006_Ben Lomond                   111841.31          99042.64
-##                         6027_Gerber Ranch 6028_Gilroy
-## 6001_Alamitos                    59535.89   128883.25
-## 6002_Alma College                92576.16    95842.98
-## 6003_Almaden Reservoir          105008.51    83410.63
-## 6004_Almaden Watershed          105961.69    82457.45
-## 6005_Alviso_Leslie Salt          30409.51   218828.65
-## 6006_Ben Lomond                 142504.12    45915.02
-##                         6029_Gilroy 8 NE USWB 6030_Gilroy 9 WNW Hasting
-## 6001_Alamitos                       112528.39                 101199.64
-## 6002_Alma College                    79488.12                  68159.37
-## 6003_Almaden Reservoir               67055.77                  55727.01
-## 6004_Almaden Watershed               66102.59                  54773.83
-## 6005_Alviso_Leslie Salt             202473.79                 191145.03
-## 6006_Ben Lomond                      29560.16                  18231.40
-##                         6032_Guadalupe Reservoir 6034_Haskins Ranch
-## 6001_Alamitos                          23953.949           75886.02
-## 6002_Alma College                       9086.322          108926.29
-## 6003_Almaden Reservoir                 21518.674          121358.64
-## 6004_Almaden Watershed                 22471.854          122311.82
-## 6005_Alviso_Leslie Salt               113899.346           14059.38
-## 6006_Ben Lomond                        59014.283          158854.25
-##                         6035_Jackson Ranch 6036_Johnson Ranch
-## 6001_Alamitos                   46077.4679           13094.20
-## 6002_Alma College               13037.1964           19946.07
-## 6003_Almaden Reservoir            604.8450           32378.42
-## 6004_Almaden Watershed            348.3349           33331.60
-## 6005_Alviso_Leslie Salt        136022.8647          103039.60
-## 6006_Ben Lomond                 36890.7649           69874.03
-##                         6037_Laguna Seca 6038_Lake Elsman
-## 6001_Alamitos                  24761.465         60018.19
-## 6002_Alma College               8278.806         26977.92
-## 6003_Almaden Reservoir         20711.158         14545.57
-## 6004_Almaden Watershed         21664.338         13592.39
-## 6005_Alviso_Leslie Salt       114706.862        149963.59
-## 6006_Ben Lomond                58206.767         22950.04
-##                         6039_Lake Kittridge 6041_Leroy Anderson Dam
-## 6001_Alamitos                     28759.758               43840.620
-## 6002_Alma College                  4280.513               10800.349
-## 6003_Almaden Reservoir            16712.865                1632.002
-## 6004_Almaden Watershed            17666.045                2585.182
-## 6005_Alviso_Leslie Salt          118705.155              133786.017
-## 6006_Ben Lomond                   54208.475               39127.612
-##                         6042_Lexington Reservoir 6043_Los Altos Reilly
-## 6001_Alamitos                          31814.148              66226.84
-## 6002_Alma College                       1226.123              99267.11
-## 6003_Almaden Reservoir                 13658.475             111699.47
-## 6004_Almaden Watershed                 14611.655             112652.65
-## 6005_Alviso_Leslie Salt               121759.545              23718.55
-## 6006_Ben Lomond                        51154.084             149195.08
-##                         6044_Loma Prieta 6045_Los Altos No 2
-## 6001_Alamitos                   70296.31            67378.76
-## 6002_Alma College               37256.04           100419.03
-## 6003_Almaden Reservoir          24823.69           112851.39
-## 6004_Almaden Watershed          23870.51           113804.57
-## 6005_Alviso_Leslie Salt        160241.71            22566.63
-## 6006_Ben Lomond                 12671.92           150347.00
-##                         6046_Los Altos Cal Wtr Svc 6047_Los Altos Fire
-## 6001_Alamitos                             56064.22            72413.56
-## 6002_Alma College                         89104.49           105453.83
-## 6003_Almaden Reservoir                   101536.84           117886.18
-## 6004_Almaden Watershed                   102490.02           118839.36
-## 6005_Alviso_Leslie Salt                   33881.18            17531.84
-## 6006_Ben Lomond                          139032.45           155381.79
-##                         6048_Sunnyvale Hamilton WTP 6049_Los Gatos 2
-## 6001_Alamitos                              56912.20         9248.405
-## 6002_Alma College                          89952.47        23791.866
-## 6003_Almaden Reservoir                    102384.82        36224.218
-## 6004_Almaden Watershed                    103338.00        37177.398
-## 6005_Alviso_Leslie Salt                    33033.20        99193.802
-## 6006_Ben Lomond                           139880.43        73719.828
-##                         6050_Los Gatos Francis 6051_Los Gatos Reservoir
-## 6001_Alamitos                         4515.584                 14072.99
-## 6002_Alma College                    28524.688                 18967.28
-## 6003_Almaden Reservoir               40957.039                 31399.63
-## 6004_Almaden Watershed               41910.219                 32352.81
-## 6005_Alviso_Leslie Salt              94460.981                104018.39
-## 6006_Ben Lomond                      78452.649                 68895.24
-##                         6053_Maryknoll 6054_Miguelito 6055_Millberry
-## 6001_Alamitos                 45085.13       71250.91       66611.35
-## 6002_Alma College             78125.40      104291.18       33571.08
-## 6003_Almaden Reservoir        90557.75      116723.53       21138.73
-## 6004_Almaden Watershed        91510.93      117676.71       20185.55
-## 6005_Alviso_Leslie Salt       44860.27       18694.49      156556.75
-## 6006_Ben Lomond              128053.36      154219.14       16356.88
-##                         6056_Milpitas_Silva 6057_Evergreen_Mirassou
-## 6001_Alamitos                      96896.26                34813.45
-## 6002_Alma College                 129936.53                67853.73
-## 6003_Almaden Reservoir            142368.88                80286.08
-## 6004_Almaden Watershed            143322.06                81239.26
-## 6005_Alviso_Leslie Salt             6950.86                55131.94
-## 6006_Ben Lomond                   179864.49               117781.69
-##                         6058_Montevina Reservoir 6059_Morgan Hill 2E
-## 6001_Alamitos                          23739.922            59992.86
-## 6002_Alma College                       9300.349            26952.59
-## 6003_Almaden Reservoir                 21732.701            14520.24
-## 6004_Almaden Watershed                 22685.881            13567.06
-## 6005_Alviso_Leslie Salt               113685.319           149938.26
-## 6006_Ben Lomond                        59228.311            22975.37
-##                         6060_Morgan Hill 6 WSW 6061_Morgan Hill_Harkness
-## 6001_Alamitos                         76458.11                 78742.039
-## 6002_Alma College                     43417.84                 45701.768
-## 6003_Almaden Reservoir                30985.49                 33269.416
-## 6004_Almaden Watershed                30032.31                 32316.237
-## 6005_Alviso_Leslie Salt              166403.51                168687.436
-## 6006_Ben Lomond                        6510.12                  4226.193
-##                         6067_Mt Hamilton 6069_Mt Umunhum
-## 6001_Alamitos                   50961.19      45524.9488
-## 6002_Alma College               84001.46      12484.6773
-## 6003_Almaden Reservoir          96433.81         52.3259
-## 6004_Almaden Watershed          97386.99        900.8540
-## 6005_Alviso_Leslie Salt         38984.21     135470.3456
-## 6006_Ben Lomond                133929.42      37443.2840
-##                         6075_Peabody Ranch 6077_Valley Christian
-## 6001_Alamitos                    105651.65              2644.579
-## 6002_Alma College                 72611.38             30395.692
-## 6003_Almaden Reservoir            60179.03             42828.044
-## 6004_Almaden Watershed            59225.85             43781.223
-## 6005_Alviso_Leslie Salt          195597.05             92589.976
-## 6006_Ben Lomond                   22683.42             80323.653
-##                         6079_Rinconada WTP 6086_6131_San Jose Composite
-## 6001_Alamitos                     4896.149                     48857.08
-## 6002_Alma College                37936.420                     81897.35
-## 6003_Almaden Reservoir           50368.772                     94329.70
-## 6004_Almaden Watershed           51321.952                     95282.88
-## 6005_Alviso_Leslie Salt          85049.248                     41088.32
-## 6006_Ben Lomond                  87864.382                    131825.31
-##                         6094_Saratoga Gap Maintenance 6096_Searsville Lake
-## 6001_Alamitos                                7243.602            82981.809
-## 6002_Alma College                           40283.873           116022.081
-## 6003_Almaden Reservoir                      52716.225           128454.432
-## 6004_Almaden Watershed                      53669.405           129407.612
-## 6005_Alviso_Leslie Salt                     82701.795             6963.588
-## 6006_Ben Lomond                             90211.835           165950.042
-##                         6097_Seven Mile Reservoir 6098_Shanti Ashrama
-## 6001_Alamitos                            823.0723            29551.41
-## 6002_Alma College                      33863.3438            62591.68
-## 6003_Almaden Reservoir                 46295.6952            75024.03
-## 6004_Almaden Watershed                 47248.8751            75977.21
-## 6005_Alviso_Leslie Salt                89122.3245            60393.99
-## 6006_Ben Lomond                        83791.3050           112519.64
-##                         6099_Penitencia WTP 6100_Stevens Creek Reservoir
-## 6001_Alamitos                      77582.34                     22153.66
-## 6002_Alma College                 110622.61                     55193.93
-## 6003_Almaden Reservoir            123054.96                     67626.28
-## 6004_Almaden Watershed            124008.14                     68579.46
-## 6005_Alviso_Leslie Salt            12363.05                     67791.74
-## 6006_Ben Lomond                   160550.57                    105121.89
-##                         6101_Sunnyvale Sewage TP  6102_UTC
-## 6001_Alamitos                         89328.8704  7870.212
-## 6002_Alma College                    122369.1418 25170.060
-## 6003_Almaden Reservoir               134801.4933 37602.411
-## 6004_Almaden Watershed               135754.6732 38555.591
-## 6005_Alviso_Leslie Salt                 616.5264 97815.608
-## 6006_Ben Lomond                      172297.1031 75098.021
-##                         6104_Uvas Reservoir 6105_Uvas Park 6108_West Yard
-## 6001_Alamitos                      94530.28       69042.12       32244.07
-## 6002_Alma College                  61490.01       36001.85       65284.34
-## 6003_Almaden Reservoir             49057.65       23569.50       77716.69
-## 6004_Almaden Watershed             48104.47       22616.32       78669.87
-## 6005_Alviso_Leslie Salt           184475.67      158987.52       57701.33
-## 6006_Ben Lomond                    11562.04       13926.11      115212.30
-##                         6121_Mountain View Corp Yard
-## 6001_Alamitos                               76978.47
-## 6002_Alma College                          110018.74
-## 6003_Almaden Reservoir                     122451.10
-## 6004_Almaden Watershed                     123404.28
-## 6005_Alviso_Leslie Salt                     12966.92
-## 6006_Ben Lomond                            159946.71
-##                         6125_Vasona Pump Station 6128_Calero Watershed
-## 6001_Alamitos                           6511.039             40507.319
-## 6002_Alma College                      39551.311              7467.048
-## 6003_Almaden Reservoir                 51983.662              4965.304
-## 6004_Almaden Watershed                 52936.842              5918.484
-## 6005_Alviso_Leslie Salt                83434.358            130452.716
-## 6006_Ben Lomond                        89479.272             42460.914
-##                         6129_Palo Alto Reclamation Plant 6132_Evergreen
-## 6001_Alamitos                                  108825.15       25899.91
-## 6002_Alma College                              141865.42       58940.18
-## 6003_Almaden Reservoir                         154297.77       71372.53
-## 6004_Almaden Watershed                         155250.95       72325.71
-## 6005_Alviso_Leslie Salt                         18879.75       64045.49
-## 6006_Ben Lomond                                191793.38      108868.14
-##                         6135_Uvas Canyon County Park
-## 6001_Alamitos                               84063.68
-## 6002_Alma College                           51023.41
-## 6003_Almaden Reservoir                      38591.06
-## 6004_Almaden Watershed                      37637.88
-## 6005_Alviso_Leslie Salt                    174009.08
-## 6006_Ben Lomond                              1095.45
-##                         6138_Lexington Reservoir_Banjo Point
-## 6001_Alamitos                                      25603.714
-## 6002_Alma College                                   7436.557
-## 6003_Almaden Reservoir                             19868.909
-## 6004_Almaden Watershed                             20822.089
-## 6005_Alviso_Leslie Salt                           115549.111
-## 6006_Ben Lomond                                    57364.518
-##                         6141_Coyote Valley_Palm Ave
-## 6001_Alamitos                                    NA
-## 6002_Alma College                                NA
-## 6003_Almaden Reservoir                           NA
-## 6004_Almaden Watershed                           NA
-## 6005_Alviso_Leslie Salt                          NA
-## 6006_Ben Lomond                                  NA</code></pre>
+distmat[1:4,1:4]</code></pre>
+<pre><code>##                        6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 6001_Alamitos                   0.00               33040.27      45472.6229      46425.8028
+## 6004_Almaden Watershed      33040.27                   0.00      12432.3514      13385.5314
+## 6006_Ben Lomond             45472.62               12432.35          0.0000        953.1799
+## 6008_Biel Ranch             46425.80               13385.53        953.1799          0.0000</code></pre>
+<p>Now a matrix has been created that contains the distances between each station. These values for 4 stations are shown above. Note that the matrix consists of a diagonal of 0 values, indicating that each station is “0 ft from itself”, and the distances between other stations are mirrored across this diagonal.</p>
+</div>
+<div id="finding-length-of-overlap-of-data-non-missing-values-between-stations" class="section level2">
+<h2>Finding Length of Overlap of Data (non-missing values) between Stations</h2>
+<pre class="r"><code>OL &lt;- matrix(0, numest, numest) # creates empty matrix to be filled with values representing the number of days that each station pair have in common (OverLap)
+
+colnames(OL) &lt;- colnames(rainfilt)[-1]
+rownames(OL) &lt;- colnames(rainfilt)[-1] 
+
+for (a in 1:numest)
+{
+  for (b in 1:numest)
+  {
+    OL[a,b] &lt;- length(which(!is.na(rainfilt[,a+1]) &amp; !is.na(rainfilt[,b+1]))) # Overlap matrix values are equal to the length (days) in which the columns associated with stations a and b each have non-NA values 
+  }
+} 
+OL[1:4,1:4]</code></pre>
+<pre><code>##                        6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 6001_Alamitos                   7668                   7668            2373            7652
+## 6004_Almaden Watershed          7668                   7670            2373            7654
+## 6006_Ben Lomond                 2373                   2373            2373            2373
+## 6008_Biel Ranch                 7652                   7654            2373            7654</code></pre>
+<p>Now a matrix has been created that contains the length of overlapping records between each station.</p>
+</div>
+<div id="calculating-correlation-coefficients-between-stations" class="section level2">
+<h2>Calculating Correlation Coefficients between Stations</h2>
+<pre class="r"><code>CC &lt;- cor(rainmat, y = NULL, use = &quot;pairwise.complete.obs&quot;) # calculates the correlation coefficient between all station pairs using pairwise complete observation which allows for NA values without removing them or including them in the calculation
+
+CC[CC == 1] &lt;- NA # removes the identity correlations (stations with themselves) of 1 to exclude these from further consideration
+CC[1:4,1:4]</code></pre>
+<pre><code>##                        6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 6001_Alamitos                     NA              0.9144423       0.5800403       0.8273300
+## 6004_Almaden Watershed     0.9144423                     NA       0.5993561       0.8369237
+## 6006_Ben Lomond            0.5800403              0.5993561              NA       0.6272827
+## 6008_Biel Ranch            0.8273300              0.8369237       0.6272827              NA</code></pre>
+<p>Now a matrix has been created that contains the correlation coefficients (CC) between each station. These CC values are based upon the correlation between all temporally-overlapping records between a given pair of stations.</p>
+</div>
+<div id="filtering-cc-values-based-upon-the-thresholds-defined-for-acceptable-levels-of-overlap-distance-and-cc-values-themselves-between-stations" class="section level2">
+<h2>Filtering CC Values Based Upon the Thresholds Defined for Acceptable Levels of Overlap, Distance, and CC Values themselves Between Stations</h2>
+<pre class="r"><code>CCfilt &lt;- CC # creates new object to contain filtered CC values
+
+CCfilt[abs(CCfilt) &lt;= CClim] &lt;- NA # removes all CC values below the defined minimum CC threshold
+
+CCfilt[OL &lt;= OLlim] &lt;- NA # removes all CC values for station-pairs which do not have a period of overlap at least as long as the thereshold specified
+
+CCfilt[distmat &gt; Distlim] &lt;- NA # removes all CC values for station-pairs which are further apart than specified threshold
+CCfilt[1:4,1:4]</code></pre>
+<pre><code>##                        6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 6001_Alamitos                     NA              0.9144423              NA              NA
+## 6004_Almaden Watershed     0.9144423                     NA       0.5993561       0.8369237
+## 6006_Ben Lomond                   NA              0.5993561              NA       0.6272827
+## 6008_Biel Ranch                   NA              0.8369237       0.6272827              NA</code></pre>
+<p>Notice that after this filtering has occurred, there have been some CC values removed from the matrix in order to exclude them from consideration in the CCW missing data-filling method applied below.</p>
+</div>
+<div id="filling-missing-data-using-the-ccw-method" class="section level2">
+<h2>Filling Missing Data Using the CCW Method</h2>
+<pre class="r"><code>RainFill &lt;- rainmat # creates a new rain matrix to contain filled missing data values
+
+for (f in 1:numest)
+{
+  valvec &lt;- which(!is.na(CCfilt[f,]))
+  
+  if (length(valvec) &gt; 0) # condition to apply the CCW method only to stations which have some available CC values from station pairs after the filtering by overlap, distance, and CC value done above
+  {
+    rainCC &lt;- rainmat[,valvec] * matrix(rep(CCfilt[f,valvec],each=dim(rainmat)[1]),nrow=dim(rainmat)[1]) #column-wise multiplication by a vector to get the rain values of each station multiplied by the cor coeff between that station and the others
+    rainCCsum &lt;- rowSums(rainCC, na.rm = T)
+    CCsum &lt;- sum(CCfilt[f,valvec])
+    missing &lt;- which(is.na(rainmat[,f]))
+    RainFill[missing,f] &lt;- rainCCsum[missing]/CCsum
+    
+    Rcd[,f] &lt;- !is.na(rainmat[,f]) # populates the record matrix with rain values from the original rain record matrix (rainfilt) 
+    RcdFill[,f] &lt;- !is.na(RainFill[,f]) # populates a new filled-record matrix with rain values from the newly filled rain record matrix (RainFill)
+  } else {
+    RainFill[,f] &lt;- rainmat[,f]
+    Rcd[,f] &lt;- !is.na(rainmat[,f]) # populates the record matrix with rain values from the original rain record matrix (rainfilt) 
+    RcdFill[,f] &lt;- !is.na(RainFill[,f]) # populates a new filled-record matrix with rain values from the newly filled rain record matrix (RainFill)
+  }
+
+}
+
+Rcd[rainmat == TRUE] &lt;- 1 # converts original un-filled rain values to binary (1/0) logical (available/missing) values
+
+Rcd[Rcd == 0] &lt;- NA # assigns NA to all missing data 
+
+RcdFill[RainFill == TRUE] &lt;- 1 # converts newly filled rain values to binary (1/0) logical (available/missing) values
+
+RcdFill[RcdFill == 0] &lt;- NA # assigns NA to all missing data 
+
+RainFill &lt;- as.data.frame(RainFill) # converts the filled matrix back to a data frame object
+
+RainFill &lt;- cbind(rainfilt$Date, RainFill) # re-combines the date values with the new data frame
+
+colnames(RainFill) &lt;- c('Date', colnames(rainmat)) # re-assigns station names to this new data frame
+
+RainFill[2492:2495,1:5]</code></pre>
+<pre><code>##             Date 6001_Alamitos 6004_Almaden Watershed 6006_Ben Lomond 6008_Biel Ranch
+## 32443 1996-10-27          0.00                   0.00       0.0000000            0.00
+## 32444 1996-10-28          0.00                   0.00       0.0000000            0.00
+## 32445 1996-10-29          0.63                   1.34       0.9656036            2.01
+## 32446 1996-10-30          0.31                   0.15       0.3907685            0.31</code></pre>
+<p>Notice that those missing values we saw before have now been filled? If some of the intermediate commands shown above are a bit confusing, it’s that’s OK. It’s best to try and follow along in the journal article cited above while attempting to interpret the above code.</p>
+<p>The most important take away, however, is that now we have a data frame of the original rainfall values mixed in with filled-in missing data estimated using the CCW method. It’s important to clarify, however, that not ALL missing values will be necessarily filled in as we’ll see in the graphic below. This is because the CCW method is still limited by the data available and the thresholds placed on CC values, distance between stations, and length of record overlap. If a given station failed some of these criteria, it may be that there are no valid CC values remaining to be used in the CCW calculations to fill its missing data.</p>
+</div>
+<div id="plotting-period-of-record-graph" class="section level2">
+<h2>Plotting Period of Record Graph</h2>
+<pre class="r"><code>par(mfrow=c(1,1))
+par(mar = c(3,max(nchar(colnames(rainmat)))/3.5,4,2), xpd = TRUE) # sets graph margins, accounting for length of the station names
+
+plot(rainfilt$Date, RcdFill[,1], lwd = &quot;2&quot;,  col = 2, ylab = '', xlab = '', ylim = c(0, dim(RcdFill)[2]), yaxt = 'n', type = 'l', main = 'Period of Record - SCVWD Rain Gages') # plots base graph
+
+for (p in 2:dim(RcdFill)[2]) # adds all filled record lines in red
+{
+  lines(as.Date(StartDate:EndDate), p*RcdFill[,p], lwd = &quot;2&quot;,  col = 2)
+}
+
+for (l in 1:dim(Rcd)[2]) # overlays original record lines in blue
+{
+  lines(as.Date(StartDate:EndDate), l*Rcd[,l], lwd = &quot;2&quot;,  col = 4)
+}
+
+par(las = 1, cex.axis = 0.50) # sets the y labels to be horizontal
+axis(2, 1:dim(RcdFill)[2], labels = colnames(rainmat)) # places station names as the y-axis labels
+legend('top', legend = c(&quot;Filled Data&quot;, &quot;Original Data&quot;), bty = 'n', cex = 0.8, col = c('red', 'blue'), lty = c(1,1), text.col = &quot;black&quot;, bg = &quot;white&quot;, horiz = TRUE, merge = TRUE, lwd = 2, inset = c(0,-0.05)) # adds legend to the plot (below title)</code></pre>
+<p><img src="data:image/png;base64,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" width="960" /></p>
+<p>We can see from the plot above that many periods of missing data have been filled (areas in red). However, there remain a number of data gaps that were unable to be filled given the limiting criteria defined above and availability of existing historical data. Note that most of the stations where data gaps remain unfilled are those which have very few years of original data during this period, and therefore do not meet the criteria defined above of at least 5 years of cumulative data overlap with other stations in order to carry the CCW estimation procedure to fill missing values.</p>
 </div>
 </div>
 
