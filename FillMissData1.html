@@ -128,7 +128,9 @@ $(document).ready(function () {
 <li><a href="#prerequisites">0. Prerequisites</a></li>
 <li><a href="#get-the-data-in">1. Get the data in</a><ul>
 <li><a href="#loading-a-csv-file-of-precipitation-station-records">Loading a CSV file of Precipitation Station Records</a></li>
+<li><a href="#specifying-the-start-and-end-date">Specifying the Start and End Date</a></li>
 <li><a href="#organizing-the-data-and-preparing-it-for-analysis">Organizing the Data and Preparing it for Analysis</a></li>
+<li><a href="#specifying-the-limits-of-attributes-used-in-the-data-filling-process">Specifying the Limits of Attributes Used in the Data-Filling Process</a></li>
 </ul></li>
 </ul>
 </div>
@@ -141,6 +143,7 @@ $(document).ready(function () {
 <ul>
 <li>Importing Data and Calculating Distance between stations</li>
 <li>Calculating Temporal Record Overlap and Correlation Coefficients between stations</li>
+<li>Filling Missing Data Using the Correlation Coeffcient Weighting Method</li>
 </ul>
 </div>
 <div id="resources" class="section level2">
@@ -159,8 +162,20 @@ unzip( 'fillmissdata.zip' , exdir = '.')</code></pre>
 <div id="prerequisites" class="section level1">
 <h1>0. Prerequisites</h1>
 <p>Some date functions we will use come from the <code>zoo</code> package, so be sure to have it installed prior to attempting this exercise. You can download this package with…</p>
-<pre class="r"><code>install.packages('zoo', repos = &quot;http://cran.cnr.berkeley.edu/&quot;)
-library(zoo)</code></pre>
+<pre class="r"><code>install.packages('zoo', repos = &quot;http://cran.cnr.berkeley.edu/&quot;)</code></pre>
+<pre><code>## Installing package into 'C:/Users/Nick/Documents/R/win-library/3.3'
+## (as 'lib' is unspecified)</code></pre>
+<pre><code>## package 'zoo' successfully unpacked and MD5 sums checked
+## 
+## The downloaded binary packages are in
+##  C:\Users\Nick\AppData\Local\Temp\RtmpiaOFGu\downloaded_packages</code></pre>
+<pre class="r"><code>library(zoo)</code></pre>
+<pre><code>## Warning: package 'zoo' was built under R version 3.3.1</code></pre>
+<pre><code>## 
+## Attaching package: 'zoo'</code></pre>
+<pre><code>## The following objects are masked from 'package:base':
+## 
+##     as.Date, as.Date.numeric</code></pre>
 </div>
 <div id="get-the-data-in" class="section level1">
 <h1>1. Get the data in</h1>
@@ -171,14 +186,18 @@ library(zoo)</code></pre>
 <p>that was easy!</p>
 <p>as a side note, the ‘check.names = F’ parameter in the ‘read.csv’ function preserves the column headers from the original record table</p>
 </div>
+<div id="specifying-the-start-and-end-date" class="section level2">
+<h2>Specifying the Start and End Date</h2>
+<pre class="r"><code>StartDate &lt;- as.Date('1/1/1990', format = &quot;%m/%d/%Y&quot;) # user-defined start date for period during which missing data will be filled
+EndDate &lt;- as.Date('12/31/2010', format = &quot;%m/%d/%Y&quot;) # user-defined end date
+
+rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates</code></pre>
+<p>The above commands dictate the start and end dates for the period of analysis. This is something that the user needs to determine and input manually. This period will represent the time period over which missing values will be analyzed and replaced.</p>
+</div>
 <div id="organizing-the-data-and-preparing-it-for-analysis" class="section level2">
 <h2>Organizing the Data and Preparing it for Analysis</h2>
 <pre class="r"><code>numest &lt;- length(rain) - 1 # calculates number of rainfall stations in the imported record table
 
-StartDate &lt;- as.Date('1/1/1990', format = &quot;%m/%d/%Y&quot;) # user-defined start date for period during which missing data will be filled
-EndDate &lt;- as.Date('12/31/2010', format = &quot;%m/%d/%Y&quot;) # user-defined end date
-
-rain &lt;- rain[which(rain$Date == StartDate):which(rain$Date == EndDate),] # filters records according to the start &amp; end dates
 rainmat &lt;- as.matrix(rain[,-1]) # converts records from data frame to matrix, excluding date values
 
 Rcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # creates blank matrix for plotting non-NAs in period of record plot, will consist of binary 1/0 values indicating present/missing data
@@ -186,7 +205,14 @@ colnames(Rcd) &lt;- colnames(rainmat) # assigns the station names to the newly-c
 
 NewRcd &lt;- matrix(NA, nrow = length(rain$Date), ncol = numest) # blank matrix for plotting non-NAs in period of record plot with missing data newly filled
 colnames(NewRcd) &lt;- colnames(rainmat) # assigns the station names to the newly-created NewRcd matrix</code></pre>
-<p>Poop on a stick, call now to get the stick for free.</p>
+<p>If all of the objects created here don’t quite make sense yet, that’s OK, they will be put to use later.</p>
+</div>
+<div id="specifying-the-limits-of-attributes-used-in-the-data-filling-process" class="section level2">
+<h2>Specifying the Limits of Attributes Used in the Data-Filling Process</h2>
+<pre class="r"><code>OLlim &lt;- 5*365 # minimum length of overlap period (days) between stations to consider using them to fill one another's missing data
+CClim &lt;- 0.5 # minimum correlation coefficient (absolute value) between stations to consider using them to fill one another's missing data </code></pre>
+<p>The method we will apply to fill missing data is called the Correlation Coefficient Weighting Method, or CCW. This method consists of calculating the correlation coefficients between the records of every stations with one another (within the time-period specified above), and then using these weighted product of these coefficients and their respective recorded rainfall values in order to produce an estimate of the missing data value for a given station at a given time step.</p>
+<p>This process is much more easily understood in Teegavarapu &amp; Chandramouli’s 2005 paper ‘Improved weighting methods, deterministic and stochastic data-driven models for estimation of missing precipitation records’ in the Journal of Hydrology (see page 5 for an explanation of the CCW method).</p>
 </div>
 </div>
 
