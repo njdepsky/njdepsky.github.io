@@ -5,6 +5,46 @@
     <meta charset="utf-8" />
     <title>Web Portfolio</title>
     <style>
+        .dropbtn {
+            background-color: rgb(151, 8, 8);
+            color: rgb(0, 0, 0);
+            padding: 14px;
+            font-size: 18px;
+            border: none;
+        }
+
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: lightgrey;
+            min-width: 250px;
+            z-index: 1;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 12px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: white;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown:hover .dropbtn {
+            background-color: grey;
+        }
+
         .info {
             padding: 6px 8px;
             font: 14px/16px Arial, Helvetica, sans-serif;
@@ -40,7 +80,19 @@
 </head>
 
 <body>
-    <h1>Web Portfolio</h1>
+    </style>
+    </head>
+
+    <div class="dropdown">
+        <button class="dropbtn">Social Media</button>
+        <div class="dropdown-content">
+
+            <a href="https://www.google.com">Google</a>
+            <a href="https://www.facebook.com">Facebook</a>
+            <a href="https://www.youtube.com">YouTube</a>
+
+        </div>
+    </div>
     <h2 align="center">County-Level Fossil Fuel Sector Employment</h2>
     <p align="center" style="font-size:14px;">Data Source: 2016 NAICS County Business Patterns</p>
     <div id="map" style="width:1000px; height:700px; margin:0 auto; border:3px solid rgb(221, 221, 221)"></div>
