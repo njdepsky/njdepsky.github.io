@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Web Portfolio</title>
+    <style>
+        .info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255, 255, 255, 0.9);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .info h4 {
+            margin: 0 0 5px;
+            color: rgb(32, 32, 32);
+        }
+
+        .legend {
+            line-height: 18px;
+            color: rgb(32, 32, 32);
+            background: rgb(255, 255, 255);
+        }
+
+        .legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
+        }
+    </style>
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    <script src="lib/leaflet.js"></script>
+    <script src="lib/leaflet.ajax.min.js"></script>
+
+</head>
+
+<body>
+    <h1>Web Portfolio</h1>
+    <h2 align="center">County-Level Fossil Fuel Sector Employment</h2>
+    <p align="center" style="font-size:14px;">Data Source: 2016 NAICS County Business Patterns</p>
+    <div id="map" style="width:1000px; height:700px; margin:0 auto; border:3px solid rgb(221, 221, 221)"></div>
+    <script src="lib/main.js"></script>
+</body>
+
+</html>
