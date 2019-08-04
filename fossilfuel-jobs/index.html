@@ -32,6 +32,12 @@
             margin-right: 8px;
             opacity: 0.7;
         }
+
+        .vertical-menu {
+            width: 200px;
+            height: 150px;
+            overflow-y: auto;
+        }
     </style>
     <link rel="stylesheet" href="lib/leaflet.css" />
     <script src="lib/leaflet.js"></script>
@@ -44,6 +50,13 @@
     </head>
     <h2 align="center">County-Level Fossil Fuel Sector Employment</h2>
     <p align="center" style="font-size:14px;">Data Source: 2016 NAICS County Business Patterns</p>
+    <div class="vertical-menu">
+        <a href="#" class="active">Home</a>
+        <a href="#">Link 1</a>
+        <a href="#">Link 2</a>
+        <a href="#">Link 3</a>
+        <a href="#">Link 4</a>
+    </div>
     <div id="map" style="width:1000px; height:700px; margin:0 auto; border:3px solid rgb(221, 221, 221)"></div>
     <script src="lib/main.js"></script>
 </body>
