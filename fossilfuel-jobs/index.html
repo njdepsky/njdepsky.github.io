@@ -4,85 +4,26 @@
 <head>
     <meta charset="utf-8" />
     <title>Web Portfolio</title>
-    <style>
-        .info {
-            padding: 6px 8px;
-            font: 14px/16px Arial, Helvetica, sans-serif;
-            background: white;
-            background: rgba(255, 255, 255, 0.9);
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            border-radius: 5px;
-        }
-
-        .info h4 {
-            margin: 0 0 5px;
-            color: rgb(32, 32, 32);
-        }
-
-        .legend {
-            line-height: 18px;
-            color: rgb(32, 32, 32);
-            background: rgb(255, 255, 255);
-        }
-
-        .legend i {
-            width: 18px;
-            height: 18px;
-            float: left;
-            margin-right: 8px;
-            opacity: 0.7;
-        }
-
-        .vertical-menu {
-            width: 200px;
-            height: 150px;
-            overflow-y: auto;
-        }
-
-        .vertical-menu a {
-            background-color: #eee;
-            /* Grey background color */
-            color: black;
-            /* Black text color */
-            display: block;
-            /* Make the links appear below each other */
-            padding: 12px;
-            /* Add some padding */
-            text-decoration: none;
-            /* Remove underline from links */
-        }
-
-        .vertical-menu a:hover {
-            background-color: #ccc;
-            /* Dark grey background on mouse-over */
-        }
-
-        .vertical-menu a.active {
-            background-color: #4CAF50;
-            /* Add a green color to the "active/current" link */
-            color: white;
-        }
-    </style>
+    <link rel="stylesheet" type="text/css" href="main.css">
     <link rel="stylesheet" href="lib/leaflet.css" />
     <script src="lib/leaflet.js"></script>
     <script src="lib/leaflet.ajax.min.js"></script>
-
 </head>
 
 <body>
-    </style>
-    </head>
-    <h2 align="center">County-Level Fossil Fuel Sector Employment</h2>
-    <p align="center" style="font-size:14px;">Data Source: 2016 NAICS County Business Patterns</p>
-    <div class="vertical-menu">
-        <a href="#" class="active">Home</a>
-        <a href="#">Link 1</a>
-        <a href="#">Link 2</a>
-        <a href="#">Link 3</a>
-        <a href="#">Link 4</a>
+    <h1 align="center">County-Level Fossil Fuel Sector Employment</h1>
+    <h4 align="center">Data Source: 2016 NAICS County Business Patterns</h4>
+    <hr>
+    <div class="content">
+        <menu class="vertical-menu">
+            <a href="#" class="active">Home</a>
+            <a href="#">Link 1</a>
+            <a href="#">Link 2</a>
+            <a href="#">Link 3</a>
+            <a href="#">Link 4</a>
+        </menu>
+        <script class="mapbox" src="lib/main.js" id="map"> </script>
     </div>
-    <div id="map" style="width:1000px; height:700px; margin:0 auto; border:3px solid rgb(221, 221, 221)"></div>
-    <script src="lib/main.js"></script>
 </body>
 
 </html>
