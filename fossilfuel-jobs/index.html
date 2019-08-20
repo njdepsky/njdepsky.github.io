@@ -15,13 +15,18 @@
     <h4 align="center">Data Source: 2016 NAICS County Business Patterns</h4>
     <hr>
     <div class="content">
-        <menu class="vertical-menu">
+        <!-- <menu class="menu-select" id="menu-select">
             <a href="#" class="active">Home</a>
             <a href="#">Link 1</a>
             <a href="#">Link 2</a>
             <a href="#">Link 3</a>
             <a href="#">Link 4</a>
-        </menu>
+        </menu> -->
+        <select id="menu-select" class = "menu-select" oninput="myFunction(this.value)">
+            <option value="allffpop">All Fossil Fuel Sectors (ex. Gas Stations)</option>
+            <option value="ffepgpop">Fossil Fuel Electric Power Generation</option>
+            <option value="pbstpop">Petroleum Bulk Stations and Terminals</option>
+        </select>
         <script class="mapbox" src="lib/main.js" id="map"> </script>
     </div>
 </body>

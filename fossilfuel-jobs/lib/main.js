@@ -11,6 +11,9 @@ var baseMap = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?
     accessToken: mapboxAccessToken
 });
 
+// Get initial dropdown menu value
+var menuval = document.getElementById("menu-select").value;
+
 // Define Layer Style and Interactive Functions
 // County Color Scheme
 function getCtyColor(d) {
@@ -39,7 +42,7 @@ function highlightFeature(e) {
     info.update(layer.feature.properties);
 }
 
-function Cty_resetHighlight(e) {
+var Cty_resetHighlight = function (e) {
     countyData.resetStyle(e.target);
     info.update();
 }
@@ -49,23 +52,21 @@ function CD_resetHighlight(e) {
     info.update();
 }
 
-function zoomToFeature(e) {
-    map.fitBounds(e.target.getBounds());
-}
+// function zoomToFeature(e) {
+//     map.fitBounds(e.target.getBounds());
+// }
 
 function Cty_onEachFeature(feature, layer) {
     layer.on({
         mouseover: highlightFeature,
-        mouseout: Cty_resetHighlight,
-        click: zoomToFeature
+        mouseout: Cty_resetHighlight
     });
 }
 
 function CD_onEachFeature(feature, layer) {
     layer.on({
         mouseover: highlightFeature,
-        mouseout: CD_resetHighlight,
-        click: zoomToFeature
+        mouseout: CD_resetHighlight
     });
 }
 
@@ -75,9 +76,8 @@ var countyData = L.geoJson.ajax("layers/US_County_wNAICS_FFdata.geojson", {
     pane: 'counties',
     style: function (feature) {
         return {
-            fillColor: getCtyColor(feature.properties.allffexgspop),
+            fillColor: getCtyColor(feature.properties[menuval]),
             fillOpacity: 1,
-
             color: '#f0f0f0',
             opacity: 1,
             weight: 0.7
@@ -85,6 +85,42 @@ var countyData = L.geoJson.ajax("layers/US_County_wNAICS_FFdata.geojson", {
     },
     onEachFeature: Cty_onEachFeature
 }).addTo(map);
+
+// ----------------------------------------------------------- //
+// Get dropdown menu value and update map
+function myFunction(val) {
+    function NewCty_onEachFeature(feature, layer) {
+        layer.on({
+            mouseover: highlightFeature,
+            mouseout: function (e) {
+                NewcountyData.resetStyle(e.target);
+                info.update();
+            },
+        });
+    }
+
+    var NewcountyData = L.geoJson.ajax("layers/US_County_wNAICS_FFdata.geojson", {
+        pane: 'counties',
+        style: function (feature) {
+            return {
+                fillColor: getCtyColor(feature.properties[val]),
+                fillOpacity: 1,
+                color: '#f0f0f0',
+                opacity: 1,
+                weight: 0.7
+            };
+        },
+        onEachFeature: NewCty_onEachFeature
+    }).addTo(map);
+}
+
+// if (document.getElementById("menu-select").value === "allffpop") {
+//     countyData = countyData;
+// } else {
+//     countyData = myFunction(val);
+// }
+
+// ----------------------------------------------------------- //
 
 map.createPane('states');
 var stateData = L.geoJson.ajax("layers/statesAKHIclose.geojson", {
@@ -146,7 +182,8 @@ info.onAdd = function (map) {
 // method that we will use to update the control based on feature properties passed
 info.update = function (props) {
     this._div.innerHTML = '<h4>All Fossil Fuel Sectors</h4><h4 style="font-size:12px">(ex. Gas Stations)</h4>' + (props ?
-        '<b>' + props.maplab + '</b><br />' + props.allffexgspop + ' employees'
+        // '<b>' + props.maplab + '</b><br />' + props.allffexgspop + ' employees'
+        '<b>' + props.maplab + '</b><br />' + props[menuval] + ' employees'
         : 'Hover over a County');
 };
 
@@ -179,3 +216,4 @@ var overlayMaps = {
     "Congressional Districts": CDData
 }
 L.control.layers({}, overlayMaps, { collapsed: false }).addTo(map);
+
