@@ -1,11 +1,7 @@
-   /* Horizontal Line */
-
    hr {
        width: 90%;
        height: 2px;
        border: none;
-       /* border-color: rgb(170, 170, 170); */
-       /* border-radius: 2px; */
        background-color: rgb(170, 170, 170);
    }
 
@@ -48,16 +44,15 @@
        background-color: rgb(255, 255, 255);
        font-weight: bold;
        margin: 10px 30%;
-       /* vertical-align: middle; */
    }
 
    .mapbox {
        display: block;
-       width: 70%;
+       width: 75%;
        height: 650px;
        left: 3%;
        border: 2px solid rgb(221, 221, 221);
-       margin-left: 12%;
+       margin-left: 10%;
        margin-right: auto;
    }
 
@@ -70,6 +65,6 @@
    }
 
    .leaflet-control-resetzoom:hover {
-    background-color: white;
-    cursor: pointer;
-}
+       background-color: white;
+       cursor: pointer;
+   }
