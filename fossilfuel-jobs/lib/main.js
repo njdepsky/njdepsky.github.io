@@ -1,15 +1,33 @@
 // Define Base Map
-var mapboxAccessToken = 'pk.eyJ1IjoibmpkZXBza3kiLCJhIjoiY2p5a255c2ozMGdwMTNjbjRuN2ZqcXduZCJ9.QW48Rnofx3wlIb02byRGrA';
+// var mapboxAccessToken = 'pk.eyJ1IjoibmpkZXBza3kiLCJhIjoiY2p5a255c2ozMGdwMTNjbjRuN2ZqcXduZCJ9.QW48Rnofx3wlIb02byRGrA';
+// var baseMap = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=' + mapboxAccessToken, {
+//     attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+//     maxZoom: 18,
+//     minZoom: 12,
+//     zoomControl: false,
+//     id: 'mapbox.streets',
+//     accessToken: mapboxAccessToken
+// });
+
 var map = L.map('map', {
-    zoomSnap: 0.5
+    zoomSnap: 0.5,
 }).setView([37.8, -96], 4.5);
 
-var baseMap = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token=' + mapboxAccessToken, {
-    attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
-    maxZoom: 18,
-    id: 'mapbox.streets',
-    accessToken: mapboxAccessToken
+var customControl = L.Control.extend({
+    options: {
+        position: 'topleft'
+    },
+    onAdd: function (map) {
+        var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-resetzoom');
+        container.onclick = function () {
+            map.setView([37.8, -96], 4.5);
+            console.log('buttonClicked');
+        }
+        return container;
+    }
 });
+
+map.addControl(new customControl());
 
 // Get initial dropdown menu value
 var menuval = document.getElementById("menu-select").value;
@@ -51,10 +69,6 @@ function CD_resetHighlight(e) {
     CDData.resetStyle(e.target);
     info.update();
 }
-
-// function zoomToFeature(e) {
-//     map.fitBounds(e.target.getBounds());
-// }
 
 function Cty_onEachFeature(feature, layer) {
     layer.on({
@@ -112,14 +126,29 @@ function myFunction(val) {
         },
         onEachFeature: NewCty_onEachFeature
     }).addTo(map);
+
+    info.update = function (props) {
+        this._div.innerHTML = (props ?
+            '<b>' + props.maplab + '</b><br />' + props[val] + ' employees'
+            : 'Hover over a County');
+    };
+
+    function highlightFeature(e) {
+        var layer = e.target;
+
+        layer.setStyle({
+            weight: 4,
+            color: '#456dff',
+            opacity: 0.9,
+            dashArray: ''
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+            layer.bringToFront();
+        }
+        info.update(layer.feature.properties);
+    }
 }
-
-// if (document.getElementById("menu-select").value === "allffpop") {
-//     countyData = countyData;
-// } else {
-//     countyData = myFunction(val);
-// }
-
 // ----------------------------------------------------------- //
 
 map.createPane('states');
@@ -161,7 +190,6 @@ var CDData = L.geoJson.ajax("layers/CD_2017_AKHIclose.geojson", {
         return {
             fillColor: '#ffffff',
             fillOpacity: 0,
-
             color: '#331a70',
             dashArray: '3',
             opacity: 0.5,
@@ -181,10 +209,9 @@ info.onAdd = function (map) {
 
 // method that we will use to update the control based on feature properties passed
 info.update = function (props) {
-    this._div.innerHTML = '<h4>All Fossil Fuel Sectors</h4><h4 style="font-size:12px">(ex. Gas Stations)</h4>' + (props ?
-        // '<b>' + props.maplab + '</b><br />' + props.allffexgspop + ' employees'
+    this._div.innerHTML = (props ?
         '<b>' + props.maplab + '</b><br />' + props[menuval] + ' employees'
-        : 'Hover over a County');
+        : '<h4>Hover over a County</h4>');
 };
 
 info.addTo(map);
