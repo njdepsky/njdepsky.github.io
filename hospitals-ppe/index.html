@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>Web Portfolio</title>
+    <link rel="stylesheet" type="text/css" href="main.css">
+    <link rel="stylesheet" href="lib/leaflet.css" />
+    <script src="lib/leaflet.js"></script>
+    <script src="lib/leaflet.ajax.min.js"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</head>
+
+<body>
+    <h1 align="center">County-Level Fossil Fuel Sector Employment</h1>
+    <h4 align="center">Data Source: 2016 NAICS County Business Patterns</h4>
+    <hr>
+    <select id="menu-select" class="menu-select" oninput="myFunction(this.value)">
+        <option value="allffpop">All Fossil Fuel Industries</option>
+        <option value="allffexgspop">All Fossil Fuel Industries (ex. Gas Stations)</option>
+
+
+        <option value="acpop">Coal - All Industries</option>
+        <option value="cmpop">Coal - Mining and Extraction</option>
+        <option value="comomwpop">Coal and Other Mineral and Ore - Merchant Wholesalers</option>
+        <option value="sacmpop">Coal - Mining Support Activities</option>
+
+        <option value="gspop">Gasoline Stations</option>
+        <option value="ffepgpop">Fossil Fuel Electric Power Generation</option>
+
+        <option value="allogppop">Oil, Gas and Petroleum - All Industries</option>
+        <option value="drogwpop">Oil and Gas - Drilling Wells</option>
+        <option value="ogepop">Oil and Gas - Extraction</option>
+        <option value="ogfmempop">Oil and Gas - Field Machinery and Equipment Manufacturing</option>
+        <option value="ngdpop">Oil and Gas - Natural Gas Distribution</option>
+        <option value="ogprscpop">Oil and Gas - Pipeline and Related Structures Construction</option>
+        <option value="ptcopop">Oil and Gas - Pipeline Transportation of Crude Oil</option>
+        <option value="ptngpop">Oil and Gas - Pipeline Transportation of Natural Gas</option>
+        <option value="saogopop">Oil and Gas - Support Activities for Distribution</option>
+
+        <option value="pbstpop">Petroleum - Bulk Stations and Terminals</option>
+        <option value="pppmwpop">Petroleum - Petroleum and Petroleum Products Merchant Wholesalers (ex Bulk Stations &
+            Terminals)</option>
+        <option value="ptrppop">Petroleum - Pipeline Transportation of Refined Petroleum Products</option>
+        <option value="prpop">Petroleum - Refineries</option>
+    </select>
+    <script class="mapbox" src="lib/main.js" id="map"> </script>
+</body>
+
+</html>
