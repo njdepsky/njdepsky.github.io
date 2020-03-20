@@ -1,2 +1,4 @@
 name: SEI WEAP Water Wiki
 markdown: kramdown
+
+theme: jekyll-theme-minimal
