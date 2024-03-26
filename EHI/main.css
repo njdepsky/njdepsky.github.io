@@ -1,0 +1,70 @@
+   hr {
+       width: 90%;
+       height: 2px;
+       border: none;
+       background-color: rgb(170, 170, 170);
+   }
+
+   .info {
+       padding: 6px 8px;
+       font-size: 14px;
+       font-family: "Arial Rounded MT Bold";
+       width: 150px;
+       background: white;
+       box-shadow: 0 0 5px rgba(85, 85, 85, 0.2);
+       border-style: solid;
+       border-radius: 5px;
+       border-color: rgb(189, 189, 189);
+       border-width: 2px;
+   }
+
+   .info h4 {
+       margin: 0 0 0px;
+       color: rgb(32, 32, 32);
+   }
+
+   .legend {
+       line-height: 18px;
+       background: rgb(255, 255, 255);
+   }
+
+   .legend i {
+       width: 18px;
+       height: 18px;
+       float: left;
+       margin-right: 8px;
+       opacity: 0.7;
+   }
+
+   .menu-select {
+       width: 40%;
+       height: 30px;
+       font-family: "Arial Rounded MT Bold";
+       font-size: 16px;
+       background-color: rgb(255, 255, 255);
+       font-weight: bold;
+       margin: 10px 30%;
+   }
+
+   .mapbox {
+       display: block;
+       width: 75%;
+       height: 650px;
+       left: 3%;
+       border: 2px solid rgb(221, 221, 221);
+       margin-left: 10%;
+       margin-right: auto;
+   }
+
+   .leaflet-control-resetzoom {
+       width: 30px;
+       height: 30px;
+       background: url(lib/arrows-alt-solid.svg) no-repeat center;
+       background-color: white;
+       background-size: 20px 20px;
+   }
+
+   .leaflet-control-resetzoom:hover {
+       background-color: white;
+       cursor: pointer;
+   }
