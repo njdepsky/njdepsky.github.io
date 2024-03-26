@@ -85,12 +85,13 @@ function CD_onEachFeature(feature, layer) {
 }
 
 // Load, Define, Add Layers 
-map.createPane('counties');
+map.createPane('land');
 var countyData = L.geoJson.ajax("layers/ne_10m_land_noANT.geojson", {
-    pane: 'counties',
+    pane: 'land',
     style: function (feature) {
         return {
-            fillColor: getCtyColor(feature.properties[menuval]),
+            // fillColor: getCtyColor(feature.properties[menuval]),
+            fillColor: '#ffffff',
             fillOpacity: 1,
             color: '#f0f0f0',
             opacity: 1,
