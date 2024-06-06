@@ -10,6 +10,8 @@
             display: flex;
             flex-direction: column;
             font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         #title {
             text-align: center;
@@ -18,7 +20,7 @@
         }
         #container {
             display: flex;
-            height: calc(100vh - 100px);
+            height: calc(100vh - 60px);
         }
         #map {
             flex: 3;
@@ -29,9 +31,14 @@
             padding: 20px;
             box-sizing: border-box;
             border-left: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
         }
         .plot {
             margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 150px;
         }
     </style>
 </head>
@@ -60,6 +67,7 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
     <script>
         // Initialize the map
         var map = L.map('map').setView([20, 0], 2);
@@ -69,27 +77,30 @@
             maxZoom: 18
         }).addTo(map);
 
-        // Define the layers
-        var layer1 = L.geoJSON(null, {
-            // Define the style and data for layer1
+        // Define the layers with blue fill and black outline
+        var geojsonStyle = {
+            color: 'black',
+            weight: 2,
+            fillColor: 'blue',
+            fillOpacity: 0.5
+        };
+
+        // Define GeoJSON layer URLs
+        // let ctys_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/US_County_wNAICS_FFdata.geojson';
+        // let states_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/statesAKHIclose.geojson';
+        let ctys_url = 'layers/US_County_wNAICS_FFdata.geojson';
+        let states_url = 'layers/statesAKHIclose.geojson';
+
+        var layer1 = new L.GeoJSON.AJAX(ctys_url, {
+            style: geojsonStyle
         });
 
-        var layer2 = L.geoJSON(null, {
-            // Define the style and data for layer2
+        var layer2 = new L.GeoJSON.AJAX(states_url, {
+            style: geojsonStyle
         });
 
-        // Function to load GeoJSON data
-        function loadGeoJSON(layer, url) {
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    layer.addData(data);
-                });
-        }
-
-        // Load initial data for layers (if any)
-        loadGeoJSON(layer1, 'path/to/layer1.geojson');
-        loadGeoJSON(layer2, 'path/to/layer2.geojson');
+        // Load and display initial layer upon opening the app
+        layer1.addTo(map);
 
         // Handle layer selection
         document.getElementById('layerSelect').addEventListener('change', function(e) {
