@@ -1,79 +1,105 @@
-<!-- <!DOCTYPE html>
-<html>
-
-<head>
-    <meta charset="utf-8" />
-    <title>Web Portfolio</title>
-    <link rel="stylesheet" type="text/css" href="main.css">
-    <link rel="stylesheet" href="lib/leaflet.css" />
-    <script src="lib/leaflet.js"></script>
-    <script src="lib/leaflet.ajax.min.js"></script>
-    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
-</head>
-
-<body>
-    <h1 align="center">Environmental and Climatic Hazards Index Viewer</h1>
-    <h4 align="center">UNDP - Human Development Report Office</h4>
-    <hr>
-    <select id="menu-select" class="menu-select" oninput="myFunction(this.value)">
-        <option value="allffpop">All Fossil Fuel Industries</option>
-        <option value="allffexgspop">All Fossil Fuel Industries (ex. Gas Stations)</option>
-
-
-        <option value="acpop">Coal - All Industries</option>
-        <option value="cmpop">Coal - Mining and Extraction</option>
-        <option value="comomwpop">Coal and Other Mineral and Ore - Merchant Wholesalers</option>
-        <option value="sacmpop">Coal - Mining Support Activities</option>
-
-        <option value="gspop">Gasoline Stations</option>
-        <option value="ffepgpop">Fossil Fuel Electric Power Generation</option>
-
-        <option value="allogppop">Oil, Gas and Petroleum - All Industries</option>
-        <option value="drogwpop">Oil and Gas - Drilling Wells</option>
-        <option value="ogepop">Oil and Gas - Extraction</option>
-        <option value="ogfmempop">Oil and Gas - Field Machinery and Equipment Manufacturing</option>
-        <option value="ngdpop">Oil and Gas - Natural Gas Distribution</option>
-        <option value="ogprscpop">Oil and Gas - Pipeline and Related Structures Construction</option>
-        <option value="ptcopop">Oil and Gas - Pipeline Transportation of Crude Oil</option>
-        <option value="ptngpop">Oil and Gas - Pipeline Transportation of Natural Gas</option>
-        <option value="saogopop">Oil and Gas - Support Activities for Distribution</option>
-
-        <option value="pbstpop">Petroleum - Bulk Stations and Terminals</option>
-        <option value="pppmwpop">Petroleum - Petroleum and Petroleum Products Merchant Wholesalers (ex Bulk Stations &
-            Terminals)</option>
-        <option value="ptrppop">Petroleum - Pipeline Transportation of Refined Petroleum Products</option>
-        <option value="prpop">Petroleum - Refineries</option>
-    </select>
-    <script class="mapbox" src="lib/main.js" id="map"> </script>
-</body>
-
-</html> -->
- 
 <!DOCTYPE html>
 <html>
 <head>
-    <title>D3.js Map Example</title>
-    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <title>Interactive Geospatial Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        .map {
-            width: 800px;
+        #map {
             height: 600px;
+            width: 100%;
+        }
+        .controls {
+            margin: 10px;
         }
     </style>
 </head>
 <body>
-    <svg class="map"></svg>
+    <div class="controls">
+        <label for="layerSelect">Select Layer:</label>
+        <select id="layerSelect">
+            <option value="none">None</option>
+            <option value="layer1">Layer 1</option>
+            <option value="layer2">Layer 2</option>
+        </select>
+        <br>
+        <label>
+            <input type="checkbox" id="checkbox1"> Checkbox 1
+        </label>
+        <br>
+        <label>
+            <input type="checkbox" id="checkbox2"> Checkbox 2
+        </label>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
-        var width = 800, height = 600;
-        var svg = d3.select(".map").attr("width", width).attr("height", height);
+        // Initialize the map
+        var map = L.map('map').setView([20, 0], 2);
 
-        var projection = d3.geoMercator().scale(150).translate([width / 2, height / 1.5]);
-        var path = d3.geoPath().projection(projection);
+        // Add a tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18
+        }).addTo(map);
 
-        d3.json("https://d3js.org/world-110m.v1.json").then(function(world) {
-            svg.append("path")
-                .datum(topojson.feature(world, world.objects.countries))
-                .attr("d", path);
+        // Define the layers
+        var layer1 = L.geoJSON(null, {
+            // Define the style and data for layer1
+        });
+
+        var layer2 = L.geoJSON(null, {
+            // Define the style and data for layer2
+        });
+
+        // Function to load GeoJSON data
+        function loadGeoJSON(layer, url) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    layer.addData(data);
+                });
+        }
+
+        // Load initial data for layers (if any)
+        loadGeoJSON(layer1, 'path/to/layer1.geojson');
+        loadGeoJSON(layer2, 'path/to/layer2.geojson');
+
+        // Handle layer selection
+        document.getElementById('layerSelect').addEventListener('change', function(e) {
+            var selectedLayer = e.target.value;
+            if (selectedLayer === 'none') {
+                map.removeLayer(layer1);
+                map.removeLayer(layer2);
+            } else if (selectedLayer === 'layer1') {
+                map.addLayer(layer1);
+                map.removeLayer(layer2);
+            } else if (selectedLayer === 'layer2') {
+                map.addLayer(layer2);
+                map.removeLayer(layer1);
+            }
+        });
+
+        // Handle checkbox changes
+        document.getElementById('checkbox1').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                // Code to handle checkbox 1 being checked
+                alert('Checkbox 1 is checked');
+            } else {
+                // Code to handle checkbox 1 being unchecked
+                alert('Checkbox 1 is unchecked');
+            }
+        });
+
+        document.getElementById('checkbox2').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                // Code to handle checkbox 2 being checked
+                alert('Checkbox 2 is checked');
+            } else {
+                // Code to handle checkbox 2 being unchecked
+                alert('Checkbox 2 is unchecked');
+            }
         });
     </script>
 </body>
