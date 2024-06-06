@@ -1,38 +1,63 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Geospatial Map</title>
+    <title>Interactive Geospatial Dashboard</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <style>
-        #map {
-            height: 600px;
-            width: 100%;
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
         }
-        .controls {
-            margin: 10px;
+        #title {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24px;
+        }
+        #container {
+            display: flex;
+            height: calc(100vh - 100px);
+        }
+        #map {
+            flex: 3;
+            height: 100%;
+        }
+        #controls {
+            flex: 1;
+            padding: 20px;
+            box-sizing: border-box;
+            border-left: 1px solid #ddd;
+        }
+        .plot {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <label for="layerSelect">Select Layer:</label>
-        <select id="layerSelect">
-            <option value="none">None</option>
-            <option value="layer1">Layer 1</option>
-            <option value="layer2">Layer 2</option>
-        </select>
-        <br>
-        <label>
-            <input type="checkbox" id="checkbox1"> Checkbox 1
-        </label>
-        <br>
-        <label>
-            <input type="checkbox" id="checkbox2"> Checkbox 2
-        </label>
+    <div id="title">Interactive Geospatial Dashboard</div>
+    <div id="container">
+        <div id="map"></div>
+        <div id="controls">
+            <label for="layerSelect">Select Layer:</label>
+            <select id="layerSelect">
+                <option value="none">None</option>
+                <option value="layer1">Layer 1</option>
+                <option value="layer2">Layer 2</option>
+            </select>
+            <br>
+            <label>
+                <input type="checkbox" id="checkbox1"> Checkbox 1
+            </label>
+            <br>
+            <label>
+                <input type="checkbox" id="checkbox2"> Checkbox 2
+            </label>
+            <div class="plot" id="plot1">Plot 1: Data will be displayed here</div>
+            <div class="plot" id="plot2">Plot 2: Data will be displayed here</div>
+        </div>
     </div>
-    <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script>
@@ -85,20 +110,20 @@
         document.getElementById('checkbox1').addEventListener('change', function(e) {
             if (e.target.checked) {
                 // Code to handle checkbox 1 being checked
-                alert('Checkbox 1 is checked');
+                document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
             } else {
                 // Code to handle checkbox 1 being unchecked
-                alert('Checkbox 1 is unchecked');
+                document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
             }
         });
 
         document.getElementById('checkbox2').addEventListener('change', function(e) {
             if (e.target.checked) {
                 // Code to handle checkbox 2 being checked
-                alert('Checkbox 2 is checked');
+                document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
             } else {
                 // Code to handle checkbox 2 being unchecked
-                alert('Checkbox 2 is unchecked');
+                document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
             }
         });
     </script>
