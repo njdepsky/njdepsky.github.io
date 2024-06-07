@@ -70,14 +70,13 @@
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
-    <!-- <script src="https://unpkg.com/proj4leaflet@1.0.2/src/proj4leaflet.js"></script> -->
     <script src="https://unpkg.com/proj4leaflet"></script>
     <script>
         // Define the World Robinson projection (EPSG:54030)
-        var rob_crs = new L.Proj.CRS('EPSG:54030',
-            '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs', {
-                resolutions: 2.194946313799785 * Math.pow(2, 5) / Math.pow(2, 21)
-        });
+        // var rob_crs = new L.Proj.CRS('EPSG:54030',
+        //     '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs', {
+        //         resolutions: 2.194946313799785 * Math.pow(2, 5) / Math.pow(2, 21)
+        // });
 
         // Initialize the map
         var map = L.map('map', {
@@ -88,10 +87,10 @@
         });
 
         // Add a tile layer
-        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        //     maxZoom: 18,
-        //     opacity: 0.2
-        // }).addTo(map);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            opacity: 0.2
+        }).addTo(map);
 
         // Define the layers with blue fill and black outline
         var geojsonStyle = {
@@ -102,61 +101,62 @@
         };
 
         // Define GeoJSON layer URLs
-        var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // hosted
-        // let raw_url = 'layers/' // local
+        // var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // local edits
+        var raw_url = 'https://github.com/njdepsky/njdepsky.github.io/raw/master/EHI/layers/' // local edits
+        // let raw_url = 'layers/' // online hosting
 
         var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson');
         var adm0 = raw_url.concat('ADM0_wVars_EHI.geojson'); 
         var ctys_url = raw_url.concat('US_County_wNAICS_FFdata.geojson');
         var states_url = raw_url.concat('statesAKHIclose.geojson');
 
-        var layer1 = new L.GeoJSON.AJAX(ne10_land, {
+        var layer1 = new L.GeoJSON.AJAX(ctys_url, {
             style: geojsonStyle
         });
 
-        var layer2 = new L.GeoJSON.AJAX(adm0, {
-            style: geojsonStyle
-        });
+        // var layer2 = new L.GeoJSON.AJAX(states_url, {
+        //     style: geojsonStyle
+        // });
 
 
-        // Load and display initial layer upon opening the app
-        layer1.addTo(map);
+        // // Load and display initial layer upon opening the app
+        // layer1.addTo(map);
 
-        // Handle layer selection
-        document.getElementById('layerSelect').addEventListener('change', function(e) {
-            var selectedLayer = e.target.value;
-            if (selectedLayer === 'none') {
-                map.removeLayer(layer1);
-                map.removeLayer(layer2);
-            } else if (selectedLayer === 'layer1') {
-                map.addLayer(layer1);
-                map.removeLayer(layer2);
-            } else if (selectedLayer === 'layer2') {
-                map.addLayer(layer2);
-                map.removeLayer(layer1);
-            }
-        });
+        // // Handle layer selection
+        // document.getElementById('layerSelect').addEventListener('change', function(e) {
+        //     var selectedLayer = e.target.value;
+        //     if (selectedLayer === 'none') {
+        //         map.removeLayer(layer1);
+        //         map.removeLayer(layer2);
+        //     } else if (selectedLayer === 'layer1') {
+        //         map.addLayer(layer1);
+        //         map.removeLayer(layer2);
+        //     } else if (selectedLayer === 'layer2') {
+        //         map.addLayer(layer2);
+        //         map.removeLayer(layer1);
+        //     }
+        // });
 
-        // Handle checkbox changes
-        document.getElementById('checkbox1').addEventListener('change', function(e) {
-            if (e.target.checked) {
-                // Code to handle checkbox 1 being checked
-                document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
-            } else {
-                // Code to handle checkbox 1 being unchecked
-                document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
-            }
-        });
+        // // Handle checkbox changes
+        // document.getElementById('checkbox1').addEventListener('change', function(e) {
+        //     if (e.target.checked) {
+        //         // Code to handle checkbox 1 being checked
+        //         document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
+        //     } else {
+        //         // Code to handle checkbox 1 being unchecked
+        //         document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
+        //     }
+        // });
 
-        document.getElementById('checkbox2').addEventListener('change', function(e) {
-            if (e.target.checked) {
-                // Code to handle checkbox 2 being checked
-                document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
-            } else {
-                // Code to handle checkbox 2 being unchecked
-                document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
-            }
-        });
+        // document.getElementById('checkbox2').addEventListener('change', function(e) {
+        //     if (e.target.checked) {
+        //         // Code to handle checkbox 2 being checked
+        //         document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
+        //     } else {
+        //         // Code to handle checkbox 2 being unchecked
+        //         document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
+        //     }
+        // });
     </script>
 </body>
 </html>
