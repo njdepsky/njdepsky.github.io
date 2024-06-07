@@ -105,7 +105,8 @@
         var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // hosted
         // let raw_url = 'layers/' // local
 
-        var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson'); 
+        var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson');
+        var adm0 = raw_url.concat('ADM0_wVars_EHI.geojson'); 
         var ctys_url = raw_url.concat('US_County_wNAICS_FFdata.geojson');
         var states_url = raw_url.concat('statesAKHIclose.geojson');
 
@@ -113,7 +114,7 @@
             style: geojsonStyle
         });
 
-        var layer2 = new L.GeoJSON.AJAX(states_url, {
+        var layer2 = new L.GeoJSON.AJAX(adm0, {
             style: geojsonStyle
         });
 
