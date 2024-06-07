@@ -89,14 +89,15 @@
         };
 
         // Define GeoJSON layer URLs
-        var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // hosted
-        // let raw_url = 'layers/' // local
+        var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // local
+        // let raw_url = 'layers/' // hosted
 
         var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson'); 
+        var adm0_borders = raw_url.concat('gadm_410_level0_simp_0_01_noANT_rob.geojson')
         var ctys_url = raw_url.concat('US_County_wNAICS_FFdata.geojson');
         var states_url = raw_url.concat('statesAKHIclose.geojson');
 
-        var layer1 = new L.GeoJSON.AJAX(ne10_land, {
+        var layer1 = new L.GeoJSON.AJAX(adm0_borders, {
             style: geojsonStyle
         });
 
