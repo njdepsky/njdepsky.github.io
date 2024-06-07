@@ -25,6 +25,7 @@
         #map {
             flex: 3;
             height: 100%;
+            background: none;
         }
         #controls {
             flex: 1;
@@ -70,28 +71,32 @@
     <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
     <script>
         // Initialize the map
-        var map = L.map('map').setView([20, 0], 2);
+        var map = L.map('map', {crs: L.CRS.EPSG54030}).setView([20, 0], 2);
 
         // Add a tile layer
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18
-        }).addTo(map);
+        // L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        //     maxZoom: 18,
+        //     opacity: 0.2
+
+        // }).addTo(map);
 
         // Define the layers with blue fill and black outline
         var geojsonStyle = {
             color: 'black',
-            weight: 2,
+            weight: 1,
             fillColor: 'blue',
-            fillOpacity: 0.5
+            fillOpacity: 0
         };
 
         // Define GeoJSON layer URLs
-        // let ctys_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/US_County_wNAICS_FFdata.geojson';
-        // let states_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/statesAKHIclose.geojson';
-        let ctys_url = 'layers/US_County_wNAICS_FFdata.geojson';
-        let states_url = 'layers/statesAKHIclose.geojson';
+        var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // hosted
+        // let raw_url = 'layers/' // local
 
-        var layer1 = new L.GeoJSON.AJAX(ctys_url, {
+        var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson'); 
+        var ctys_url = raw_url.concat('US_County_wNAICS_FFdata.geojson');
+        var states_url = raw_url.concat('statesAKHIclose.geojson');
+
+        var layer1 = new L.GeoJSON.AJAX(ne10_land, {
             style: geojsonStyle
         });
 
