@@ -102,61 +102,94 @@
 
         // Define GeoJSON layer URLs
         // var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // local edits
-        var raw_url = 'https://github.com/njdepsky/njdepsky.github.io/raw/master/EHI/layers/' // local edits
+        // var raw_url = 'https://github.com/njdepsky/njdepsky.github.io/raw/master/EHI/layers/' // local edits
+        var raw_url = 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/' // local edits
         // let raw_url = 'layers/' // online hosting
 
         var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson');
         var adm0 = raw_url.concat('ADM0_wVars_EHI.geojson'); 
-        var ctys_url = raw_url.concat('US_County_wNAICS_FFdata.geojson');
-        var states_url = raw_url.concat('statesAKHIclose.geojson');
 
-        var layer1 = new L.GeoJSON.AJAX(ctys_url, {
+        var layer1 = new L.GeoJSON.AJAX(ne10_land, {
             style: geojsonStyle
         });
 
-        // var layer2 = new L.GeoJSON.AJAX(states_url, {
-        //     style: geojsonStyle
-        // });
+        var layer2 = new L.GeoJSON.AJAX(adm0, {
+            style: geojsonStyle
+        });
 
+        // CORS proxy
+        // const corsProxy = 'https://cors-anywhere.herokuapp.com/';
 
-        // // Load and display initial layer upon opening the app
-        // layer1.addTo(map);
+        // Function to load GeoJSON data and add it to the map
+        // function loadGeoJSON(url, layerName) {
+        //     fetch(url)
+        //         .then(response => response.json())
+        //         .then(data => {
+        //             var transformedData = transformGeoJSON(data);
+        //             var geojsonLayer = L.geoJSON(transformedData, { style: geojsonStyle });
+        //             layers[layerName] = geojsonLayer;
+        //             if (layerName === 'layer1') {
+        //                 geojsonLayer.addTo(map);
+        //             }
+        //         })
+        //         .catch(error => console.error('Error loading the GeoJSON file:', error));
+        // }
 
-        // // Handle layer selection
-        // document.getElementById('layerSelect').addEventListener('change', function(e) {
-        //     var selectedLayer = e.target.value;
-        //     if (selectedLayer === 'none') {
-        //         map.removeLayer(layer1);
-        //         map.removeLayer(layer2);
-        //     } else if (selectedLayer === 'layer1') {
-        //         map.addLayer(layer1);
-        //         map.removeLayer(layer2);
-        //     } else if (selectedLayer === 'layer2') {
-        //         map.addLayer(layer2);
-        //         map.removeLayer(layer1);
-        //     }
-        // });
+        // // Function to transform GeoJSON coordinates to the map's CRS
+        // function transformGeoJSON(geojson) {
+        //     var sourceProj = 'EPSG:4326';
+        //     var targetProj = 'EPSG:54030';
+        //     return L.geoJson(geojson, {
+        //         coordsToLatLng: function(coords) {
+        //             var point = proj4(sourceProj, targetProj, [coords[0], coords[1]]);
+        //             return new L.LatLng(point[1], point[0]);
+        //         }
+        //     }).toGeoJSON();
+        // }
 
-        // // Handle checkbox changes
-        // document.getElementById('checkbox1').addEventListener('change', function(e) {
-        //     if (e.target.checked) {
-        //         // Code to handle checkbox 1 being checked
-        //         document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
-        //     } else {
-        //         // Code to handle checkbox 1 being unchecked
-        //         document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
-        //     }
-        // });
+        // Load GeoJSON files and initialize layers
+        // var layers = {};
+        // loadGeoJSON(ne10_land, 'layer1');
+        // loadGeoJSON('https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/USA/ADM0/geoBoundaries-USA-ADM0.geojson', 'layer2');
 
-        // document.getElementById('checkbox2').addEventListener('change', function(e) {
-        //     if (e.target.checked) {
-        //         // Code to handle checkbox 2 being checked
-        //         document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
-        //     } else {
-        //         // Code to handle checkbox 2 being unchecked
-        //         document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
-        //     }
-        // });
+        // Load and display initial layer upon opening the app
+        layer1.addTo(map);
+
+        // Handle layer selection
+        document.getElementById('layerSelect').addEventListener('change', function(e) {
+            var selectedLayer = e.target.value;
+            if (selectedLayer === 'none') {
+                map.removeLayer(layer1);
+                map.removeLayer(layer2);
+            } else if (selectedLayer === 'layer1') {
+                map.addLayer(layer1);
+                map.removeLayer(layer2);
+            } else if (selectedLayer === 'layer2') {
+                map.addLayer(layer2);
+                map.removeLayer(layer1);
+            }
+        });
+
+        // Handle checkbox changes
+        document.getElementById('checkbox1').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                // Code to handle checkbox 1 being checked
+                document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
+            } else {
+                // Code to handle checkbox 1 being unchecked
+                document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
+            }
+        });
+
+        document.getElementById('checkbox2').addEventListener('change', function(e) {
+            if (e.target.checked) {
+                // Code to handle checkbox 2 being checked
+                document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
+            } else {
+                // Code to handle checkbox 2 being unchecked
+                document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
+            }
+        });
     </script>
 </body>
 </html>
