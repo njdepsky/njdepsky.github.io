@@ -112,11 +112,11 @@
 
         // Function to set the color based on a value
         function getColor(d) {
-            return d > 0.8 ? '#800026' :
-                   d > 0.6 ? '#BD0026' :
-                   d > 0.4 ? '#E31A1C' :
-                   d > 0.2 ? '#FC4E2A' :
-                   d > 0.0 ? '#FD8D3C' :
+            return d > 0.8 ? '#800900' :
+                   d > 0.6 ? '#ff3729' :
+                   d > 0.4 ? '#ff6a38' :
+                   d > 0.2 ? '#faab19' :
+                   d > 0.0 ? '#f5d238' :
                              '#FFEDA0';
         }
 
@@ -126,7 +126,7 @@
                 fillColor: getColor(feature.properties[valueType]),
                 weight: 0.5,
                 opacity: 1,
-                color: 'white',
+                color: '#bdbdbd',
                 dashArray: '1',
                 fillOpacity: 0.8
             };
