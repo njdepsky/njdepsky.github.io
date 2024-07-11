@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Geospatial Dashboard</title>
+    <title>&#127758 EHI Dashboard</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
@@ -44,15 +44,26 @@
     </style>
 </head>
 <body>
-    <div id="title">Interactive Geospatial Dashboard</div>
+    <div id="title">Enviro-Climatic Hazard (EHI) Index Dashboard</div>
     <div id="container">
         <div id="map"></div>
         <div id="controls">
             <label for="layerSelect">Select Layer:</label>
             <select id="layerSelect">
                 <option value="none">None</option>
-                <option value="layer1">Layer 1</option>
-                <option value="layer2">Layer 2</option>
+                <option value="ne10m">Natural Earth Land (10m)</option>
+                <option value="adm0">ADM0 Boundaries</option>
+                <option value="adm0_wv">ADM0 (EHI)</option>
+                <option value="adm1_wv">ADM1 (EHI)</option>
+                <option value="adm2_wv">ADM2 (EHI)</option>
+                <!-- <option value="grid_wv">Land Grid 0.25deg (EHI)</option> -->
+            </select>
+            <br>
+            <label for="valueSelect">Select Value:</label>
+            <select id="valueSelect">
+                <option value="none">None</option>
+                <option value="EHI_pctl_nz_unif_wtd">EHI_pctl_nz_unif_wtd</option>
+                <option value="EHI_bin_thresh_unif_wtd">EHI_bin_thresh_unif_wtd</option>
             </select>
             <br>
             <label>
@@ -71,123 +82,122 @@
     <script src="https://unpkg.com/leaflet-ajax/dist/leaflet.ajax.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js"></script>
     <script src="https://unpkg.com/proj4leaflet"></script>
+    <!-- <script src="https://unpkg.com/browse/leaflet.glify@3.2.0/dist/glify-browser.js"></script>
+    <script src="https://github.com/onaci/Leaflet.glify.layer/blob/main/dist/leaflet-glify-layer.js"></script> -->
+    
     <script>
         // Define the World Robinson projection (EPSG:54030)
-        // var rob_crs = new L.Proj.CRS('EPSG:54030',
-        //     '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs', {
-        //         resolutions: 2.194946313799785 * Math.pow(2, 5) / Math.pow(2, 21)
-        // });
+        var s0 = 3e-5 // scale at zoom 0 for robinson
+        var crs = new L.Proj.CRS('EPSG:54030',
+            '+proj=robin +lon_0=0 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs', {
+                resolutions: [
+                    8192, 4096, 2048, 1024, 512, 256, 128, 64, 32, 16, 8, 4, 2, 1, 0.5, 0.25
+                ],
+                origin: [0, 0],
+                bounds: L.bounds([-20037508.34, -20037508.34], [20037508.34, 20037508.34]),
+                scales: [
+                    // 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192
+                    s0, s0*(2**1), s0*(2**2), s0*(2**3), s0*(2**4), s0*(2**5), s0*(2**6), s0*(2**7), s0*(2**8), s0*(2**9), s0*(2**10), s0*(2**11), s0*(2**12), s0*(2**13), s0*(2**14), s0*(2**15), s0*(2**16)
+                ]
+        });
 
         // Initialize the map
-        var map = L.map('map', {
-            // crs: L.CRS.EPSG4326,
-            // crs: rob_crs,
-            center: [0,0],
-            zoom: 1.5
-        });
+        var map = L.map('map').setView([0, 0], 2);
 
         // Add a tile layer
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 18,
-            opacity: 0.2
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        // Define the layers with blue fill and black outline
-        var geojsonStyle = {
-            color: 'black',
-            weight: 1,
-            fillColor: 'blue',
-            fillOpacity: 0
+        // Function to set the color based on a value
+        function getColor(d) {
+            return d > 0.8 ? '#800026' :
+                   d > 0.6 ? '#BD0026' :
+                   d > 0.4 ? '#E31A1C' :
+                   d > 0.2 ? '#FC4E2A' :
+                   d > 0.0 ? '#FD8D3C' :
+                             '#FFEDA0';
+        }
+
+        // Function to style the GeoJSON layer
+        function style(feature, valueType) {
+            return {
+                fillColor: getColor(feature.properties[valueType]),
+                weight: 0.5,
+                opacity: 1,
+                color: 'white',
+                dashArray: '1',
+                fillOpacity: 0.8
+            };
+        }
+
+        var geojsonLayer;
+
+        // Function to update the map based on the selected value column and GeoJSON data
+        function updateMap(geojsonData, valueType) {
+            if (geojsonLayer) {
+                map.removeLayer(geojsonLayer);
+            }
+            geojsonLayer = L.geoJson(geojsonData, {
+                style: function (feature) {
+                    return style(feature, valueType);
+                }
+            }).addTo(map);
+        }
+
+        var geojsonData = {};
+
+        // Fetch GeoJSON data from AWS S3 and store it in the geojsonData object
+        function fetchGeoJSON(layer, url) {
+            return fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    geojsonData[layer] = data;
+                })
+                .catch(error => console.error('Error loading the GeoJSON file:', error));
+        }
+
+        // URLs for the GeoJSON layers
+        var layerUrls = {
+            'ne10m':  'https://njdepsky-b1.s3.us-west-1.amazonaws.com/layers/ne_10m_land_noANT.geojson',
+            'adm0':  'https://njdepsky-b1.s3.us-west-1.amazonaws.com/layers/gadm_410_level0_simp_0_01_noANT.geojson',
+            'adm0_wv': 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/layers/ADM0_wVars_EHI.geojson',
+            'adm1_wv': 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/layers/ADM1_wVars_EHI.geojson',
+            'adm2_wv': 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/layers/ADM2_wVars_EHI.geojson'
         };
 
-        // Define GeoJSON layer URLs
-        // var raw_url = 'https://raw.githubusercontent.com/njdepsky/njdepsky.github.io/master/EHI/layers/' // local edits
-        // var raw_url = 'https://github.com/njdepsky/njdepsky.github.io/raw/master/EHI/layers/' // local edits
-        var raw_url = 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/' // local edits
-        // let raw_url = 'layers/' // online hosting
-
-        var ne10_land = raw_url.concat('ne_10m_land_noANT.geojson');
-        var adm0 = raw_url.concat('ADM0_wVars_EHI.geojson'); 
-
-        var layer1 = new L.GeoJSON.AJAX(ne10_land, {
-            style: geojsonStyle
+        // Fetch all GeoJSON layers
+        Promise.all([
+            fetchGeoJSON('ne10m', layerUrls.ne10m),
+            fetchGeoJSON('adm0', layerUrls.adm0),
+            fetchGeoJSON('adm0_wv', layerUrls.adm0_wv),
+            fetchGeoJSON('adm1_wv', layerUrls.adm1_wv),
+            fetchGeoJSON('adm2_wv', layerUrls.adm2_wv),
+        ]).then(() => {
+            // Initialize map with the first layer and value
+            updateMap(geojsonData['ne10m'], 'none');
         });
 
-        var layer2 = new L.GeoJSON.AJAX(adm0, {
-            style: geojsonStyle
-        });
-
-        // CORS proxy
-        // const corsProxy = 'https://cors-anywhere.herokuapp.com/';
-
-        // Function to load GeoJSON data and add it to the map
-        // function loadGeoJSON(url, layerName) {
-        //     fetch(url)
-        //         .then(response => response.json())
-        //         .then(data => {
-        //             var transformedData = transformGeoJSON(data);
-        //             var geojsonLayer = L.geoJSON(transformedData, { style: geojsonStyle });
-        //             layers[layerName] = geojsonLayer;
-        //             if (layerName === 'layer1') {
-        //                 geojsonLayer.addTo(map);
-        //             }
-        //         })
-        //         .catch(error => console.error('Error loading the GeoJSON file:', error));
-        // }
-
-        // // Function to transform GeoJSON coordinates to the map's CRS
-        // function transformGeoJSON(geojson) {
-        //     var sourceProj = 'EPSG:4326';
-        //     var targetProj = 'EPSG:54030';
-        //     return L.geoJson(geojson, {
-        //         coordsToLatLng: function(coords) {
-        //             var point = proj4(sourceProj, targetProj, [coords[0], coords[1]]);
-        //             return new L.LatLng(point[1], point[0]);
-        //         }
-        //     }).toGeoJSON();
-        // }
-
-        // Load GeoJSON files and initialize layers
-        // var layers = {};
-        // loadGeoJSON(ne10_land, 'layer1');
-        // loadGeoJSON('https://raw.githubusercontent.com/wmgeolab/geoBoundaries/main/releaseData/gbOpen/USA/ADM0/geoBoundaries-USA-ADM0.geojson', 'layer2');
-
-        // Load and display initial layer upon opening the app
-        layer1.addTo(map);
-
-        // Handle layer selection
-        document.getElementById('layerSelect').addEventListener('change', function(e) {
-            var selectedLayer = e.target.value;
-            if (selectedLayer === 'none') {
-                map.removeLayer(layer1);
-                map.removeLayer(layer2);
-            } else if (selectedLayer === 'layer1') {
-                map.addLayer(layer1);
-                map.removeLayer(layer2);
-            } else if (selectedLayer === 'layer2') {
-                map.addLayer(layer2);
-                map.removeLayer(layer1);
+        // Handle layer selection change
+        document.getElementById('layerSelect').addEventListener('change', function() {
+            var selectedLayer = this.value;
+            var selectedValue = document.getElementById('valueSelect').value;
+            if (selectedLayer !== 'none') {
+                updateMap(geojsonData[selectedLayer], selectedValue);
+            } else {
+                if (geojsonLayer) {
+                    map.removeLayer(geojsonLayer);
+                }
             }
         });
 
-        // Handle checkbox changes
-        document.getElementById('checkbox1').addEventListener('change', function(e) {
-            if (e.target.checked) {
-                // Code to handle checkbox 1 being checked
-                document.getElementById('plot1').innerText = 'Checkbox 1 is checked';
-            } else {
-                // Code to handle checkbox 1 being unchecked
-                document.getElementById('plot1').innerText = 'Checkbox 1 is unchecked';
-            }
-        });
-
-        document.getElementById('checkbox2').addEventListener('change', function(e) {
-            if (e.target.checked) {
-                // Code to handle checkbox 2 being checked
-                document.getElementById('plot2').innerText = 'Checkbox 2 is checked';
-            } else {
-                // Code to handle checkbox 2 being unchecked
-                document.getElementById('plot2').innerText = 'Checkbox 2 is unchecked';
+        // Handle value selection change
+        document.getElementById('valueSelect').addEventListener('change', function() {
+            var selectedValue = this.value;
+            var selectedLayer = document.getElementById('layerSelect').value;
+            if (selectedLayer !== 'none') {
+                updateMap(geojsonData[selectedLayer], selectedValue);
             }
         });
     </script>

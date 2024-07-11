@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaflet.js with GeoJSON and glify</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 600px;
+        }
+        #controls {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <label for="layerSelect">Select Layer:</label>
+        <select id="layerSelect">
+            <option value="none">None</option>
+            <option value="tst">tst</option>
+            <!-- <option value="ne10m">Natural Earth Land (10m)</option> -->
+            <!-- <option value="adm0">ADM0 Boundaries</option> -->
+            <!-- <option value="adm0_wv">ADM0 (EHI)</option> -->
+            <!-- <option value="adm1_wv">ADM1 (EHI)</option> -->
+            <!-- <option value="adm2_wv">ADM2 (EHI)</option> -->
+            <!-- <option value="grid_wv">Land Grid 0.25deg (EHI)</option> -->
+        </select>
+        <br>
+        <label for="valueSelect">Select Value:</label>
+        <select id="valueSelect">
+            <option value="none">None</option>
+            <option value="EHI_pctl_nz_unif_wtd">EHI_pctl_nz_unif_wtd</option>
+            <option value="EHI_bin_thresh_unif_wtd">EHI_bin_thresh_unif_wtd</option>
+        </select>
+    </div>
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/browse/leaflet.glify@3.2.0/dist/glify-browser.js"></script>
+    <!-- <script src="https://unpkg.com/browse/leaflet.glify@3.2.0/dist/glify.js"></script> -->
+    <!-- <script src="https://unpkg.com/browse/leaflet.glify@3.2.0/dist/glify.js.map"></script> -->
+    <script src="./dist/leaflet-glify-layer.js"></script>
+    <!-- <script src="https://raw.githubusercontent.com/onaci/Leaflet.glify.layer/main/dist/leaflet-glify-layer.js"></script> -->
+    <!-- <script src="https://github.com/onaci/Leaflet.glify.layer/blob/main/dist/leaflet-glify-layer.js"></script> -->
+    <script>
+        // Initialize the map
+        var map = L.map('map').setView([37.8, -96], 4);
+
+        // Add a tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var geojsonLayers = {};
+        var currentLayer;
+
+        // Function to set the color based on a value
+        function getColor(d) {
+            return d > 0.8 ? '#800026' :
+                   d > 0.6 ? '#BD0026' :
+                   d > 0.4 ? '#E31A1C' :
+                   d > 0.2 ? '#FC4E2A' :
+                   d > 0.0 ? '#FD8D3C' :
+                             '#FFEDA0';
+        }
+
+        // Function to load GeoJSON from S3 and create a glify layer
+        function loadGeoJSONLayer(url, layerName) {
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    geojsonLayers[layerName] = data;
+                    if (!currentLayer) {
+                        updateMap(layerName, 'tst'); // Load the first layer by default
+                    }
+                })
+                .catch(error => console.error('Error loading the GeoJSON file:', error));
+        }
+
+        // URLs for the GeoJSON layers
+        // var raw_url = 'https://njdepsky-b1.s3.us-west-1.amazonaws.com/' // local edits
+        // var layerUrls = {
+        //     'ne10m': raw_url + 'ne_10m_land_noANT.geojson',
+        //     'adm0': raw_url + 'gadm_410_level0_simp_0_01_noANT.geojson',
+        //     'adm0_wv': raw_url + 'ADM0_wVars_EHI.geojson',
+        // };
+
+        // Load the GeoJSON layers
+        loadGeoJSONLayer('https://njdepsky-b1.s3.us-west-1.amazonaws.com/tst.geojson', 'tst');
+        // loadGeoJSONLayer(layerUrls.ne10m, 'ne10m');
+        // loadGeoJSONLayer(layerUrls.adm0, 'adm0');
+        // loadGeoJSONLayer(layerUrls.adm0_wv, 'adm0_wv');
+
+        // Function to update the map based on the selected layer and value column
+        function updateMap(layerName, valueType) {
+            if (currentLayer) {
+                map.removeLayer(currentLayer);
+            }
+            currentLayer = L.glify.layer({
+                geojson: geojsonLayers[layerName],
+                // geojsonLayers[layerName],
+                style: function (feature) {
+                    return {
+                        color: getColor(feature.properties[valueType]),
+                        opacity: 0.7,
+                        weight: 1
+                    };
+                },
+                onClick: function (e, feature) {
+                    alert('Clicked on: ' + feature.properties[valueType]);
+                }
+            }).addTo(map);
+        }
+
+        // Handle layer selection change
+        document.getElementById('layerSelect').addEventListener('change', function() {
+            var selectedLayer = this.value;
+            var selectedValue = document.getElementById('valueSelect').value;
+            if (selectedLayer !== 'none') {
+                updateMap(selectedLayer, selectedValue);
+            } else if (currentLayer) {
+                map.removeLayer(currentLayer);
+                currentLayer = null;
+            }
+        });
+
+        // Handle value selection change
+        document.getElementById('valueSelect').addEventListener('change', function() {
+            var selectedValue = this.value;
+            var selectedLayer = document.getElementById('layerSelect').value;
+            if (selectedLayer !== 'none') {
+                updateMap(selectedLayer, selectedValue);
+            }
+        });
+    </script>
+</body>
+</html>
